@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  name         String?
+  passwordHash String
+  xp           Int           @default(0)
+  level        Int           @default(1)
+  tasks        Task[]
+  habits       Habit[]
+  xpEvents     XpEvent[]
+  teamMembers  TeamMember[]
+  activities   Activity[]    @relation("ActivityActor")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Task {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  teamId    String?    // Optional: shared tasks belong to a team
+  team      Team?      @relation(fields: [teamId], references: [id])
+  title     String
+  status    String     @default("todo")
+  priority  String     @default("medium")
+  dueDate   DateTime?
+  order     Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Habit {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  title     String
+  frequency String     @default("daily")
+  logs      HabitLog[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model HabitLog {
+  id        String   @id @default(uuid())
+  habitId   String
+  habit     Habit    @relation(fields: [habitId], references: [id])
+  date      DateTime
+  completed Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([habitId, date])
+}
+
+model XpEvent {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  source    String   // task | habit
+  value     Int
+  createdAt DateTime @default(now())
+}
+
+// ============ COLLABORATION MODELS ============
+
+model Team {
+  id          String       @id @default(uuid())
+  name        String
+  code        String       @unique // Join code for invites
+  members     TeamMember[]
+  tasks       Task[]
+  activities  Activity[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id])
+  role      String   @default("member") // owner | admin | member
+  joinedAt  DateTime @default(now())
+
+  @@unique([userId, teamId])
+}
+
+model Activity {
+  id        String   @id @default(uuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id])
+  actorId   String
+  actor     User     @relation("ActivityActor", fields: [actorId], references: [id])
+  type      String   // task_created | task_completed | member_joined | level_up
+  metadata  String?  // JSON string for extra data
+  createdAt DateTime @default(now())
+}

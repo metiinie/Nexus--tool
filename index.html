@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NEXUS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
+            colors: {
+              background: '#030712', // Dark slate 950
+              surface: '#0f172a', // Slate 900
+              primary: '#06b6d4', // Cyan 500
+              secondary: '#d946ef', // Fuchsia 500
+              accent: '#8b5cf6', // Violet 500
+              success: '#10b981', // Emerald 500
+            },
+            boxShadow: {
+              'glow-primary': '0 0 20px -5px rgba(6, 182, 212, 0.5)',
+              'glow-secondary': '0 0 20px -5px rgba(217, 70, 239, 0.5)',
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        background-color: #030712;
+        background-image: 
+          radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.15) 0%, transparent 50%),
+          radial-gradient(circle at 80% 80%, rgba(217, 70, 239, 0.08) 0%, transparent 40%);
+        background-attachment: fixed;
+        color: #e2e8f0;
+        overflow: hidden; /* App handles scrolling */
+      }
+      /* Custom Scrollbar for the holo feel */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(15, 23, 42, 0.5);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.3);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(6, 182, 212, 0.5);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "zustand": "https://esm.sh/zustand@^5.0.10",
+    "zustand/": "https://esm.sh/zustand@^5.0.10/",
+    "framer-motion": "https://esm.sh/framer-motion@^12.29.2",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "recharts": "https://esm.sh/recharts@^3.7.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Backend Test</title>
+</head>
+<body>
+    <h1>NEXUS Backend Test</h1>
+    <div id="result"></div>
+    <script>
+        async function test() {
+            try {
+                const response = await fetch('http://localhost:3000/api/health');
+                const data = await response.text();
+                document.getElementById('result').innerHTML = `
+                    <p style="color: green;">✅ Backend is running!</p>
+                    <p>Response: ${data}</p>
+                `;
+            } catch (e) {
+                document.getElementById('result').innerHTML = `
+                    <p style="color: red;">❌ Backend connection failed</p>
+                    <p>Error: ${e.message}</p>
+                `;
+            }
+        }
+        test();
+    </script>
+</body>
+</html>
