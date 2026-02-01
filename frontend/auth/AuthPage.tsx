@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useStore } from '../../store';
+import { useStore, API_BASE } from '../../store';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { User, Mail, Lock, Shield, Zap, Terminal, ChevronRight, Activity, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -53,7 +53,11 @@ export const AuthPage: React.FC = () => {
         const payload = isLogin ? { email, password } : { email, password, name };
 
         try {
-            const response = await fetch(`http://localhost:3000${endpoint}`, {
+            // endpoint starts with /api/auth/...
+            // API_BASE is .../api
+            // We need to be careful with double /api
+            const cleanBase = API_BASE.replace(/\/api$/, '');
+            const response = await fetch(`${cleanBase}${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',

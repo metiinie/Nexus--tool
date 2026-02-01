@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Users, Plus, LogIn, Copy, Check, Activity, Zap, Crown, Shield, User, X, ChevronRight, MessageSquare, Terminal, Target, Compass, Anchor } from 'lucide-react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useStore } from '../../store';
+import { useStore, API_BASE } from '../../store';
 import { SquadChat } from './SquadChat';
 
-const API_BASE = 'http://localhost:3000/api';
+
 
 interface Team {
     id: string;

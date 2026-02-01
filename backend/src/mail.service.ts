@@ -20,7 +20,8 @@ export class MailService {
     }
 
     async sendVerificationEmail(email: string, token: string) {
-        const url = `http://localhost:5173/#/verify-email?token=${token}`;
+        const baseUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
+        const url = `${baseUrl}/#/verify-email?token=${token}`;
         this.logger.log(`[MAIL] Verification email sent to ${email}. Token: ${token}`);
         this.logger.log(`[MAIL] Click here: ${url}`);
 
@@ -34,7 +35,8 @@ export class MailService {
     }
 
     async sendPasswordResetEmail(email: string, token: string) {
-        const url = `http://localhost:5173/#/reset-password?token=${token}`;
+        const baseUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
+        const url = `${baseUrl}/#/reset-password?token=${token}`;
         this.logger.log(`[MAIL] Password reset email sent to ${email}. Token: ${token}`);
         this.logger.log(`[MAIL] Click here: ${url}`);
 
