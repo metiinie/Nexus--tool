@@ -21,11 +21,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     async validate(payload: any) {
         const user = await (this.prisma.user as any).findFirst({
             where: { id: payload.sub },
-            select: { id: true, email: true, name: true, xp: true, level: true },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                xp: true,
+                level: true,
+                tokenVersion: true
+            },
         });
 
-        if (!user) {
-            throw new UnauthorizedException();
+        if (!user || user.tokenVersion !== (payload.version || 0)) {
+            throw new UnauthorizedException('Session expired or invalidated by security protocol');
         }
         return user;
     }

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Target, BarChart2, Settings, User, LogOut, Users, Activity, Trophy } from 'lucide-react';
+import { LayoutDashboard, Target, BarChart2, Settings, User, LogOut, Users, Activity, Trophy, Plus } from 'lucide-react';
 import { TaskBoard } from './frontend/tasks/TaskBoard';
 import { HabitGrid } from './frontend/habits/HabitGrid';
 import { AnalyticsDashboard } from './frontend/analytics/AnalyticsDashboard';
@@ -9,6 +9,8 @@ import { TeamsPage } from './frontend/teams/TeamsPage';
 import { SettingsPage } from './frontend/settings/SettingsPage';
 import { TrophyRoom } from './frontend/achievements/TrophyRoom';
 import { AuthPage } from './frontend/auth/AuthPage';
+import { VerifyEmailPage } from './frontend/auth/VerifyEmailPage';
+import { ResetPasswordPage } from './frontend/auth/ResetPasswordPage';
 import { useStore } from './store';
 
 const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => (
@@ -31,26 +33,48 @@ const MobileNavItem: React.FC<{ to: string; icon: React.ReactNode; label: string
   <NavLink
     to={to}
     className={({ isActive }) => `
-      flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all duration-300
+      flex flex-col items-center justify-center gap-1 transition-all duration-300 relative py-1
       ${isActive
-        ? 'text-cyan-400 bg-cyan-400/5'
-        : 'text-slate-500 hover:text-slate-300'}
+        ? 'text-cyan-400 scale-110'
+        : 'text-slate-500'}
     `}
   >
-    <div className="transition-transform duration-300">{icon}</div>
-    <span className="text-[9px] font-black uppercase tracking-tighter">{label}</span>
+    <div className="relative">
+      {icon}
+      <NavLink to={to} className={({ isActive }) => isActive ? "absolute -inset-2 bg-cyan-400/10 blur-lg rounded-full" : "hidden"} />
+    </div>
+    <span className="text-[7px] font-black uppercase tracking-[0.2em]">{label}</span>
   </NavLink>
 );
+
 const App: React.FC = () => {
-  const { isAuthenticated, syncAll, isInitialSync, logout, visualPrefs } = useStore();
+  const { isAuthenticated, syncAll, isInitialSync, logout, visualPrefs, setOnline } = useStore();
+  const [showQuickAction, setShowQuickAction] = React.useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
       syncAll();
-      const interval = setInterval(syncAll, 30000);
-      return () => clearInterval(interval);
+
+      const handleOnline = () => {
+        setOnline(true);
+        syncAll();
+      };
+      const handleOffline = () => setOnline(false);
+
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+
+      const interval = setInterval(() => {
+        if (navigator.onLine) syncAll();
+      }, 60000); // 1 min sync
+
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+        clearInterval(interval);
+      };
     }
-  }, [isAuthenticated, syncAll]);
+  }, [isAuthenticated, syncAll, setOnline]);
 
   const handleLogout = async () => {
     await logout();
@@ -68,7 +92,7 @@ const App: React.FC = () => {
           <Activity className="text-cyan-400 w-12 h-12 animate-spin-slow" />
         </div>
         <div className="text-center space-y-2">
-          <p className="text-cyan-400 font-mono text-sm tracking-[0.5em] animate-pulse">SYNCHRONIZING NEURAL LINK</p>
+          <p className="text-cyan-400 font-mono text-sm tracking-[0.5em] animate-pulse">SYNCING YOUR DATA</p>
           <div className="w-48 h-1 bg-slate-900 rounded-full overflow-hidden">
             <div className="h-full bg-cyan-500 w-full animate-shimmer"></div>
           </div>
@@ -112,34 +136,45 @@ const App: React.FC = () => {
 
           <nav className="flex-1 flex flex-col gap-2">
             <NavItem to="/dashboard" icon={<LayoutDashboard size={20} />} label="Overview" />
-            <NavItem to="/tasks" icon={<Target size={20} />} label="Operations" />
-            <NavItem to="/habits" icon={<Activity size={20} />} label="Neural Patterns" />
-            <NavItem to="/analytics" icon={<BarChart2 size={20} />} label="Performance" />
-            <NavItem to="/achievements" icon={<Trophy size={20} />} label="Trophy Room" />
-            <NavItem to="/squadron" icon={<Users size={20} />} label="Squadron" />
+            <NavItem to="/tasks" icon={<Target size={20} />} label="Tasks" />
+            <NavItem to="/habits" icon={<Activity size={20} />} label="Habits" />
+            <NavItem to="/analytics" icon={<BarChart2 size={20} />} label="Analytics" />
+            <NavItem to="/achievements" icon={<Trophy size={20} />} label="Achievements" />
+            <NavItem to="/squadron" icon={<Users size={20} />} label="Teams" />
           </nav>
 
           <div className="mt-auto flex flex-col gap-2 pt-6 border-t border-white/5">
-            <NavItem to="/settings" icon={<Settings size={20} />} label="System Config" />
+            <NavItem to="/settings" icon={<Settings size={20} />} label="Settings" />
             <button
               onClick={handleLogout}
               className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:text-rose-400 hover:bg-rose-500/5 group"
             >
               <LogOut size={20} className="group-hover:scale-110 transition-transform duration-200" />
-              <span className="font-medium text-sm font-mono uppercase tracking-[0.1em]">Terminate Link</span>
+              <span className="font-medium text-sm font-mono uppercase tracking-[0.1em]">Sign Out</span>
             </button>
           </div>
         </aside>
 
-        {/* Mobile Navigation */}
-        <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-sm">
-          <div className="bg-slate-900/80 backdrop-blur-2xl border border-white/10 p-2.5 rounded-2xl flex justify-between items-center shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
-            <MobileNavItem to="/dashboard" icon={<LayoutDashboard size={18} />} label="Base" />
-            <MobileNavItem to="/tasks" icon={<Target size={18} />} label="Ops" />
-            <MobileNavItem to="/habits" icon={<Activity size={18} />} label="Sync" />
-            <MobileNavItem to="/analytics" icon={<BarChart2 size={18} />} label="Data" />
-            <MobileNavItem to="/squadron" icon={<Users size={18} />} label="Squad" />
-            <MobileNavItem to="/settings" icon={<Settings size={18} />} label="Config" />
+        {/* Mobile Navigation - Elite Command Ribbon */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-[100] px-4 pb-6 pt-10 pointer-events-none">
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+          <div className="bg-slate-900/40 backdrop-blur-3xl border border-white/5 p-2 rounded-[28px] flex justify-between items-center shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative pointer-events-auto">
+            <MobileNavItem to="/dashboard" icon={<LayoutDashboard size={18} />} label="Home" />
+            <MobileNavItem to="/tasks" icon={<Target size={18} />} label="Tasks" />
+
+            {/* Quick Launch Portal */}
+            <div className="relative -top-8">
+              <button
+                onClick={() => window.location.hash = '#/tasks'}
+                className="w-14 h-14 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-slate-950 shadow-[0_10px_25px_rgba(6,182,212,0.4)] active:scale-90 transition-all border-4 border-slate-900/90"
+              >
+                <Plus size={28} strokeWidth={3} />
+              </button>
+              <div className="absolute -inset-2 bg-cyan-500/20 blur-xl -z-10 rounded-full animate-pulse"></div>
+            </div>
+
+            <MobileNavItem to="/habits" icon={<Activity size={18} />} label="Habits" />
+            <MobileNavItem to="/squadron" icon={<Users size={18} />} label="Teams" />
           </div>
         </div>
 
@@ -169,6 +204,8 @@ const App: React.FC = () => {
                   <Route path="/achievements" element={<TrophyRoom />} />
                   <Route path="/squadron" element={<TeamsPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/verify-email" element={<VerifyEmailPage />} />
+                  <Route path="/reset-password" element={<ResetPasswordPage />} />
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>
               </div>

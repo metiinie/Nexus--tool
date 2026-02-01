@@ -106,7 +106,10 @@ export class GameService {
                 preferences: true,
                 xp: true,
                 level: true,
-                createdAt: true
+                createdAt: true,
+                notificationPrefs: true,
+                quietHours: true,
+                role: true
             },
         });
 
@@ -124,7 +127,7 @@ export class GameService {
         };
     }
 
-    async updateProfile(userId: string, data: { name?: string; bio?: string; preferences?: string }) {
+    async updateProfile(userId: string, data: { name?: string; bio?: string; preferences?: string; notificationPrefs?: string; quietHours?: string }) {
         this.logger.log(`Updating profile for user: ${userId}`);
         return (this.prisma.user as any).update({
             where: { id: userId },

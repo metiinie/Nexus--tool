@@ -29,6 +29,10 @@ export class TasksService {
                 assignee: { select: { id: true, name: true, email: true } },
                 user: { select: { id: true, name: true, email: true } },
                 team: { select: { id: true, name: true } },
+                comments: {
+                    where: { type: 'block', resolved: false },
+                    take: 1
+                },
                 _count: { select: { comments: true } }
             },
             orderBy: { order: 'asc' },

@@ -8,12 +8,25 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(uuid())
-  email        String        @unique
-  name         String?
-  bio          String?       @default("")
-  preferences  String?       @default("{}") // JSON string for UI prefs
-  passwordHash String
+  id                  String        @id @default(uuid())
+  email               String        @unique
+  name                String?
+  bio                 String?       @default("")
+  preferences         String?       @default("{}") // JSON string for UI prefs
+  passwordHash        String
+  
+  // Security Hardening
+  isVerified          Boolean       @default(false)
+  verificationToken   String?
+  verificationExpires DateTime?
+  resetToken          String?
+  resetExpires        DateTime?
+  twoFactorSecret     String?
+  twoFactorEnabled    Boolean       @default(false)
+  tokenVersion        Int           @default(0) // For session invalidation
+  role                String        @default("operator") // admin | operator
+  securityLogs        SecurityLog[]
+
   xp           Int           @default(0)
   level        Int           @default(1)
   tasks        Task[]
@@ -23,9 +36,63 @@ model User {
   teamMembers  TeamMember[]
   activities   Activity[]    @relation("ActivityActor")
   notifications Notification[]
-  taskComments  TaskComment[]
+  taskComments  TaskComment[] @relation("CommentAuthor")
+  resolvedComments TaskComment[] @relation("CommentResolver")
+  userAchievements UserAchievement[]
+  notificationPrefs   String?       @default("{}") // { "critical_deadline": ["in_app", "email"], ... }
+  quietHours          String?       @default("{}") // { "enabled": false, "start": "22:00", "end": "08:00" }
+  notificationAudits  NotificationAudit[]
+  squadMessages       SquadChat[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+}
+
+model NotificationAudit {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   // e.g., 'critical_deadline'
+  channel   String   // 'in_app' | 'email' | 'suppressed'
+  reason    String?  // 'quiet_hours' | 'cooldown' | 'delivered'
+  createdAt DateTime @default(now())
+}
+
+model AchievementDefinition {
+  id          String   @id @default(uuid())
+  key         String   @unique // e.g., 'first_strike'
+  title       String
+  description String
+  icon        String
+  category    String   // ops | neural | status
+  target      Int      @default(1)
+  rules       String?  @default("{}") // JSON for rule engine constraints
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userAchievements UserAchievement[]
+}
+
+model UserAchievement {
+  id                      String   @id @default(uuid())
+  userId                  String
+  user                    User     @relation(fields: [userId], references: [id])
+  achievementDefinitionId String
+  achievementDefinition   AchievementDefinition @relation(fields: [achievementDefinitionId], references: [id])
+  unlockedAt              DateTime @default(now())
+  unlockedReason          String?  // Why it unlocked (audit trail)
+  
+  @@unique([userId, achievementDefinitionId])
+}
+
+model SecurityLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  event     String   // LOGIN | PWD_CHANGE | 2FA_ENABLE | RESET_REQ | VERIFY_EMAIL
+  ip        String?
+  userAgent String?
+  metadata  String?  // JSON string
+  createdAt DateTime @default(now())
 }
 
 model Notification {
@@ -61,13 +128,17 @@ model Task {
 }
 
 model TaskComment {
-  id        String   @id @default(uuid())
-  taskId    String
-  task      Task     @relation(fields: [taskId], references: [id])
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  content   String
-  createdAt DateTime @default(now())
+  id            String   @id @default(uuid())
+  taskId        String
+  task          Task     @relation(fields: [taskId], references: [id])
+  userId        String
+  user          User     @relation("CommentAuthor", fields: [userId], references: [id])
+  content       String
+  type          String   @default("standard") // standard | update | question | block
+  resolved      Boolean  @default(false)
+  resolvedById  String?
+  resolvedBy    User?    @relation("CommentResolver", fields: [resolvedById], references: [id])
+  createdAt     DateTime @default(now())
 }
 
 model Habit {
@@ -110,6 +181,7 @@ model Team {
   members     TeamMember[]
   tasks       Task[]
   activities  Activity[]
+  chatMessages SquadChat[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }
@@ -120,10 +192,20 @@ model TeamMember {
   user      User     @relation(fields: [userId], references: [id])
   teamId    String
   team      Team     @relation(fields: [teamId], references: [id])
-  role      String   @default("member") // owner | admin | member
+  role      String   @default("operator") // commander | navigator | operator | observer
   joinedAt  DateTime @default(now())
 
   @@unique([userId, teamId])
+}
+
+model SquadChat {
+  id        String   @id @default(uuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
 }
 
 model Activity {
@@ -132,7 +214,7 @@ model Activity {
   team      Team     @relation(fields: [teamId], references: [id])
   actorId   String
   actor     User     @relation("ActivityActor", fields: [actorId], references: [id])
-  type      String   // task_created | task_completed | member_joined | level_up
+  type      String   // task_created | task_completed | member_joined | level_up | chat_message
   metadata  String?  // JSON string for extra data
   createdAt DateTime @default(now())
 }

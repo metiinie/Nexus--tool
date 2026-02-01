@@ -40,6 +40,11 @@ export class UserController {
         return this.notificationService.markAllAsRead(req.user.id);
     }
 
+    @Get('notifications/audit')
+    async getAudit(@Req() req: any) {
+        return this.notificationService.getAudit(req.user.id);
+    }
+
     @Patch('profile')
     async updateProfile(@Req() req: any, @Body() body: any) {
         return this.gameService.updateProfile(req.user.id, body);

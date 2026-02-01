@@ -12,6 +12,11 @@ export interface UserProfile {
   xp: number;
   level: number;
   nextLevelXP: number;
+  isVerified?: boolean;
+  twoFactorEnabled?: boolean;
+  role?: 'admin' | 'operator';
+  notificationPrefs?: string; // JSON
+  quietHours?: string; // JSON
 }
 
 export interface VisualPreferences {
@@ -20,6 +25,7 @@ export interface VisualPreferences {
   chromatic: boolean;
   intensity: number;
   notifications: boolean;
+  lowPower: boolean;
 }
 
 const DEFAULT_PREFS: VisualPreferences = {
@@ -27,7 +33,8 @@ const DEFAULT_PREFS: VisualPreferences = {
   scanlines: true,
   chromatic: true,
   intensity: 100,
-  notifications: true
+  notifications: true,
+  lowPower: false
 };
 
 export interface Task {
@@ -42,31 +49,45 @@ export interface Task {
   user?: { id: string, name: string, email: string };
   team?: { id: string, name: string };
   commentsCount?: number;
+  comments?: any[]; // For block indicators
 }
 
 export interface TaskComment {
   id: string;
   content: string;
+  type: 'standard' | 'update' | 'question' | 'block';
+  resolved: boolean;
   createdAt: string;
   user: { id: string, name: string, email: string };
+  resolvedBy?: { id: string, name: string };
+}
+
+export interface SquadChatMessage {
+  id: string;
+  content: string;
+  createdAt: string;
+  user: { id: string, name: string, level: number };
 }
 
 export interface Habit {
   id: string;
   title: string;
-  streak: number;
   completedDates: string[];
 }
 
 export interface Achievement {
   id: string;
+  key: string;
   title: string;
   description: string;
   icon: string;
-  category: 'ops' | 'neural' | 'status';
+  category: string;
   isUnlocked: boolean;
-  progress?: number;
-  target?: number;
+  progress: number;
+  target: number;
+  unlockedAt?: string;
+  unlockedReason?: string;
+  version: number;
 }
 
 export interface Notification {
@@ -86,6 +107,8 @@ interface AppState {
   visualPrefs: VisualPreferences;
   isInitialSync: boolean;
   isSyncing: boolean;
+  isOnline: boolean;
+  lastSyncAt: string | null;
 
   // Data
   tasks: Task[];
@@ -96,6 +119,7 @@ interface AppState {
 
   // Core Actions
   setAuth: (user: UserProfile) => void;
+  setOnline: (online: boolean) => void;
   logout: () => Promise<void>;
   syncAll: () => Promise<void>;
   setActiveTask: (task: Task | null) => void;
@@ -105,21 +129,36 @@ interface AppState {
   markAllNotificationsRead: () => Promise<void>;
 
   // User Actions
-  updateProfile: (data: { name?: string; bio?: string }) => Promise<void>;
+  updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   updateVisualPrefs: (prefs: Partial<VisualPreferences>) => Promise<void>;
   changePassword: (data: any) => Promise<{ success: boolean; message: string }>;
+  verifyEmail: (token: string) => Promise<{ success: boolean; message: string }>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; message: string }>;
+  resetPassword: (data: any) => Promise<{ success: boolean; message: string }>;
+  setup2FA: () => Promise<{ qrCode: string; secret: string }>;
+  enable2FA: (token: string) => Promise<{ success: boolean; message: string }>;
+  verify2FALogin: (userId: string, token: string) => Promise<{ success: boolean; message: string; user?: any }>;
 
   // Tactical Actions
   addTask: (data: any) => Promise<void>;
   updateTask: (id: string, data: any) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   assignTask: (teamId: string, taskId: string, assigneeId: string) => Promise<void>;
-  addComment: (teamId: string, taskId: string, content: string) => Promise<void>;
+  addComment: (teamId: string, taskId: string, content: string, type?: string) => Promise<void>;
+  resolveComment: (teamId: string, commentId: string) => Promise<void>;
   getTaskComments: (teamId: string, taskId: string) => Promise<TaskComment[]>;
   getTeamMembers: (teamId: string) => Promise<any[]>;
+
+  // Tactical Chat
+  getSquadChat: (teamId: string) => Promise<SquadChatMessage[]>;
+  sendSquadMessage: (teamId: string, content: string) => Promise<void>;
+
   addHabit: (title: string) => Promise<void>;
   toggleHabit: (id: string, date: string) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
+
+  // Admin Actions
+  updateAchievementDefinition: (id: string, data: any) => Promise<void>;
 }
 
 export const useStore = create<AppState>()(
@@ -130,6 +169,8 @@ export const useStore = create<AppState>()(
       visualPrefs: DEFAULT_PREFS,
       isInitialSync: true,
       isSyncing: false,
+      isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+      lastSyncAt: null,
       tasks: [],
       habits: [],
       achievements: [],
@@ -147,6 +188,8 @@ export const useStore = create<AppState>()(
         set({ user, visualPrefs, isAuthenticated: true, isInitialSync: false });
       },
 
+      setOnline: (online) => set({ isOnline: online }),
+
       setActiveTask: (task) => set({ activeTask: task }),
 
       logout: async () => {
@@ -162,7 +205,8 @@ export const useStore = create<AppState>()(
           habits: [],
           achievements: [],
           notifications: [],
-          isInitialSync: true
+          isInitialSync: true,
+          lastSyncAt: null
         });
         localStorage.clear();
         window.location.hash = '#/login';
@@ -213,7 +257,6 @@ export const useStore = create<AppState>()(
               habits: habitsRaw.map((h: any) => ({
                 id: h.id,
                 title: h.title,
-                streak: h.streak || 0,
                 completedDates: h.logs?.filter((l: any) => l.completed).map((l: any) => l.date.split('T')[0]) || []
               }))
             });
@@ -221,9 +264,11 @@ export const useStore = create<AppState>()(
           if (achievementsRes.ok) set({ achievements: await achievementsRes.json() });
           if (notificationsRes.ok) set({ notifications: await notificationsRes.json() });
 
+          set({ lastSyncAt: new Date().toISOString(), isOnline: true });
           console.log('[Store] Neural synchronization attempt complete');
         } catch (e) {
           console.error('[Store] Sync critical failure:', e);
+          set({ isOnline: false });
         } finally {
           set({ isSyncing: false, isInitialSync: false });
         }
@@ -253,7 +298,7 @@ export const useStore = create<AppState>()(
         }
       },
 
-      updateProfile: async (data) => {
+      updateProfile: async (data: Partial<UserProfile>) => {
         const res = await fetch(`${API_BASE}/user/profile`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -277,7 +322,7 @@ export const useStore = create<AppState>()(
       },
 
       changePassword: async (data) => {
-        const res = await fetch(`${API_BASE}/user/password`, {
+        const res = await fetch(`${API_BASE}/auth/password`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -285,39 +330,137 @@ export const useStore = create<AppState>()(
         });
 
         if (res.ok) {
-          return { success: true, message: 'Password updated successfully' };
+          return { success: true, message: 'Password updated successfully. Session re-validated.' };
         } else {
           const err = await res.json();
           return { success: false, message: err.message || 'Password update failed' };
         }
       },
 
+      verifyEmail: async (token) => {
+        const res = await fetch(`${API_BASE}/auth/verify-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        const data = await res.json();
+        return { success: res.ok, message: data.message || (res.ok ? 'Email verified successfully' : 'Verification failed') };
+      },
+
+      forgotPassword: async (email) => {
+        const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        return { success: res.ok, message: data.message };
+      },
+
+      resetPassword: async (data) => {
+        const res = await fetch(`${API_BASE}/auth/reset-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        return { success: res.ok, message: result.message || (res.ok ? 'Password reset successful' : 'Reset failed') };
+      },
+
+      setup2FA: async () => {
+        const res = await fetch(`${API_BASE}/auth/2fa/setup`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        return await res.json();
+      },
+
+      enable2FA: async (token) => {
+        const res = await fetch(`${API_BASE}/auth/2fa/enable`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ token })
+        });
+        const data = await res.json();
+        if (res.ok) await get().syncAll();
+        return { success: res.ok, message: data.message || '2FA enabled' };
+      },
+
+      verify2FALogin: async (userId, token) => {
+        const res = await fetch(`${API_BASE}/auth/2fa/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, token })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          get().setAuth(data);
+          return { success: true, message: 'Login successful', user: data };
+        }
+        return { success: false, message: data.message || 'Invalid 2FA token' };
+      },
+
       addTask: async (data) => {
+        const tempId = 'temp-' + Date.now();
+        const newTask: Task = {
+          id: tempId,
+          title: data.title,
+          priority: data.priority,
+          status: data.status || 'todo',
+          createdAt: new Date().toISOString(),
+          commentsCount: 0
+        };
+
+        set(state => ({ tasks: [newTask, ...state.tasks] }));
+
         const res = await fetch(`${API_BASE}/tasks`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify(data)
         });
-        if (res.ok) await get().syncAll();
+
+        if (res.ok) {
+          const saved = await res.json();
+          set(state => ({
+            tasks: state.tasks.map(t => t.id === tempId ? saved : t)
+          }));
+        } else {
+          set(state => ({ tasks: state.tasks.filter(t => t.id !== tempId) }));
+        }
       },
 
       updateTask: async (id, data) => {
+        const oldTasks = get().tasks;
+        set(state => ({
+          tasks: state.tasks.map(t => t.id === id ? { ...t, ...data } : t)
+        }));
+
         const res = await fetch(`${API_BASE}/tasks/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify(data)
         });
-        if (res.ok) await get().syncAll();
+
+        if (!res.ok) {
+          set({ tasks: oldTasks });
+        } else if (data.status === 'done' || data.priority) {
+          await get().syncAll(); // Refresh to get correct scores/XP
+        }
       },
 
       deleteTask: async (id) => {
-        await fetch(`${API_BASE}/tasks/${id}`, {
+        const oldTasks = get().tasks;
+        set(state => ({ tasks: state.tasks.filter(t => t.id !== id) }));
+
+        const res = await fetch(`${API_BASE}/tasks/${id}`, {
           method: 'DELETE',
           credentials: 'include'
         });
-        await get().syncAll();
+
+        if (!res.ok) set({ tasks: oldTasks });
       },
 
       assignTask: async (teamId, taskId, assigneeId) => {
@@ -330,12 +473,20 @@ export const useStore = create<AppState>()(
         if (res.ok) await get().syncAll();
       },
 
-      addComment: async (teamId, taskId, content) => {
+      addComment: async (teamId, taskId, content, type = 'standard') => {
         const res = await fetch(`${API_BASE}/teams/${teamId}/tasks/${taskId}/comments`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ content })
+          body: JSON.stringify({ content, type })
+        });
+        if (res.ok) await get().syncAll();
+      },
+
+      resolveComment: async (teamId, commentId) => {
+        const res = await fetch(`${API_BASE}/teams/${teamId}/comments/${commentId}/resolve`, {
+          method: 'PATCH',
+          credentials: 'include'
         });
         if (res.ok) await get().syncAll();
       },
@@ -356,7 +507,32 @@ export const useStore = create<AppState>()(
         return [];
       },
 
+      getSquadChat: async (teamId) => {
+        const res = await fetch(`${API_BASE}/teams/${teamId}/chat`, {
+          credentials: 'include'
+        });
+        if (res.ok) return await res.json();
+        return [];
+      },
+
+      sendSquadMessage: async (teamId, content) => {
+        const res = await fetch(`${API_BASE}/teams/${teamId}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ content })
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.message || 'Transmission failed');
+        }
+      },
+
       addHabit: async (title) => {
+        const tempId = 'temp-' + Date.now();
+        const newHabit: Habit = { id: tempId, title, completedDates: [] };
+        set(state => ({ habits: [...state.habits, newHabit] }));
+
         const res = await fetch(`${API_BASE}/habits`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -364,24 +540,54 @@ export const useStore = create<AppState>()(
           body: JSON.stringify({ title })
         });
         if (res.ok) await get().syncAll();
+        else set(state => ({ habits: state.habits.filter(h => h.id !== tempId) }));
       },
 
       toggleHabit: async (id, date) => {
+        const oldHabits = get().habits;
+        set(state => ({
+          habits: state.habits.map(h => {
+            if (h.id === id) {
+              const exists = h.completedDates.includes(date);
+              return {
+                ...h,
+                completedDates: exists
+                  ? h.completedDates.filter(d => d !== date)
+                  : [...h.completedDates, date]
+              };
+            }
+            return h;
+          })
+        }));
+
         const res = await fetch(`${API_BASE}/habits/${id}/toggle`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ date })
         });
-        if (res.ok) await get().syncAll();
+        if (!res.ok) set({ habits: oldHabits });
+        else await get().syncAll();
       },
 
       deleteHabit: async (id) => {
-        await fetch(`${API_BASE}/habits/${id}`, {
+        const oldHabits = get().habits;
+        set(state => ({ habits: state.habits.filter(h => h.id !== id) }));
+        const res = await fetch(`${API_BASE}/habits/${id}`, {
           method: 'DELETE',
           credentials: 'include'
         });
-        await get().syncAll();
+        if (!res.ok) set({ habits: oldHabits });
+      },
+
+      updateAchievementDefinition: async (id, data) => {
+        const res = await fetch(`${API_BASE}/admin/achievements/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(data)
+        });
+        if (res.ok) await get().syncAll();
       }
     }),
     {
@@ -390,7 +596,11 @@ export const useStore = create<AppState>()(
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
         user: state.user,
-        visualPrefs: state.visualPrefs
+        visualPrefs: state.visualPrefs,
+        tasks: state.tasks,
+        habits: state.habits,
+        achievements: state.achievements,
+        notifications: state.notifications
       }),
     }
   )

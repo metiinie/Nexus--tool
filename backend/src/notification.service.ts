@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { GameService } from './game.service';
+import { MailService } from './mail.service';
 
 @Injectable()
 export class NotificationService {
@@ -8,13 +9,20 @@ export class NotificationService {
 
     constructor(
         private prisma: PrismaService,
-        private gameService: GameService
+        private gameService: GameService,
+        private mailService: MailService
     ) { }
 
-    async getNotifications(userId: string) {
-        // First, check for time-sensitive events and generate them if they don't exist
-        await this.detectEvents(userId);
+    async getAudit(userId: string) {
+        return (this.prisma as any).notificationAudit.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+            take: 10
+        });
+    }
 
+    async getNotifications(userId: string) {
+        await this.detectEvents(userId);
         return (this.prisma as any).notification.findMany({
             where: { userId },
             orderBy: { createdAt: 'desc' },
@@ -37,8 +45,6 @@ export class NotificationService {
     }
 
     private async detectEvents(userId: string) {
-        this.logger.debug(`Neural Ping Engine: Scanning for high-signal events for user ${userId}`);
-
         const user = await (this.prisma as any).user.findUnique({
             where: { id: userId },
             include: {
@@ -49,26 +55,13 @@ export class NotificationService {
 
         if (!user) return;
 
-        // Check preferences
-        let prefs = { notifications: true };
-        if (user.preferences) {
-            try {
-                prefs = { ...prefs, ...JSON.parse(user.preferences) };
-            } catch (e) { }
-        }
-
-        if (!prefs.notifications) {
-            this.logger.debug(`Neural Pings disabled for user ${userId}. Skipping detection.`);
-            return;
-        }
-
-        // 1. Detect Critical Deadlines
+        // 1. Check Deadlines
         const criticalTasks = user.tasks.filter((t: any) => t.priority === 'critical');
         for (const task of criticalTasks) {
             if (task.dueDate) {
                 const hoursLeft = (new Date(task.dueDate).getTime() - Date.now()) / (1000 * 60 * 60);
                 if (hoursLeft > 0 && hoursLeft < 24) {
-                    await this.createNotification(userId, 'critical_deadline', {
+                    await this.dispatch(user, 'critical_deadline', {
                         title: 'Critical Objective at Risk',
                         message: `Operational deadline for "${task.title}" is less than 24 hours away.`,
                         priority: 'urgent',
@@ -78,18 +71,16 @@ export class NotificationService {
             }
         }
 
-        // 2. Detect Habit Streaks at Risk
+        // 2. Check Habts
         for (const habit of user.habits) {
             const streak = this.gameService.calculateStreak(habit.logs);
             if (streak >= 3) {
-                // Check if already completed today
                 const today = new Date().toISOString().split('T')[0];
                 const completedToday = habit.logs.some((l: any) => l.date.toISOString().split('T')[0] === today && l.completed);
-
                 if (!completedToday) {
-                    await this.createNotification(userId, 'habit_at_risk', {
+                    await this.dispatch(user, 'habit_at_risk', {
                         title: 'Neural Pattern Decoupling',
-                        message: `Your ${streak}-day streak for "${habit.title}" is at risk of termination.`,
+                        message: `Your ${streak}-day streak for "${habit.title}" is at risk.`,
                         priority: 'high',
                         metadata: JSON.stringify({ habitId: habit.id })
                     });
@@ -98,26 +89,93 @@ export class NotificationService {
         }
     }
 
-    private async createNotification(userId: string, type: string, data: { title: string, message: string, priority: string, metadata?: string }) {
-        // Prevent duplicate recent notifications of the same type and metadata (e.g. same task ID)
-        const recent = await (this.prisma as any).notification.findFirst({
+    private async dispatch(user: any, type: string, data: any) {
+        const userId = user.id;
+
+        // A. Suppress if within 2 hour cooldown for same type/metadata
+        const cooldown = 1000 * 60 * 60 * 2;
+        const recent = await (this.prisma as any).notificationAudit.findFirst({
             where: {
                 userId,
                 type,
-                metadata: data.metadata,
-                createdAt: { gte: new Date(Date.now() - 1000 * 60 * 60 * 12) } // 12 hours
-            }
+                createdAt: { gte: new Date(Date.now() - cooldown) }
+            },
+            orderBy: { createdAt: 'desc' }
         });
 
-        if (!recent) {
-            this.logger.log(`Generating Neural Ping: ${data.title} for user ${userId}`);
-            await (this.prisma as any).notification.create({
+        if (recent && recent.channel !== 'suppressed') {
+            return; // Already dispatched recently
+        }
+
+        // B. Check Quiet Hours
+        let quietHours = { enabled: false, start: '22:00', end: '08:00' };
+        try {
+            if (user.quietHours) quietHours = { ...quietHours, ...JSON.parse(user.quietHours) };
+        } catch (e) { }
+
+        const isQuiet = this.isInQuietHours(quietHours);
+        const canEscalate = data.priority === 'urgent';
+
+        // C. Check Prefs
+        let prefs: Record<string, string[]> = {
+            'critical_deadline': ['in_app', 'email'],
+            'habit_at_risk': ['in_app'],
+            'system_alert': ['in_app']
+        };
+        try {
+            if (user.notificationPrefs) prefs = { ...prefs, ...JSON.parse(user.notificationPrefs) };
+        } catch (e) { }
+
+        const channels = prefs[type] || ['in_app'];
+
+        // D. Execution Logic
+        for (const channel of channels) {
+            let status = 'delivered';
+            let reason = 'delivered';
+
+            if (isQuiet && !canEscalate) {
+                status = 'suppressed';
+                reason = 'quiet_hours';
+            }
+
+            if (status === 'delivered') {
+                if (channel === 'in_app') {
+                    // Check duplicate in Notification table
+                    const existing = await (this.prisma as any).notification.findFirst({
+                        where: { userId, type, metadata: data.metadata, isRead: false }
+                    });
+                    if (!existing) {
+                        await (this.prisma as any).notification.create({
+                            data: { userId, type, ...data }
+                        });
+                    }
+                } else if (channel === 'email') {
+                    await this.mailService.sendNotificationEmail(user.email, data.title, data.message);
+                }
+            }
+
+            // Log Audit
+            await (this.prisma as any).notificationAudit.create({
                 data: {
                     userId,
                     type,
-                    ...data
+                    channel: status === 'suppressed' ? 'suppressed' : channel,
+                    reason: status === 'suppressed' ? reason : 'dispatched'
                 }
             });
+        }
+    }
+
+    private isInQuietHours(qh: any): boolean {
+        if (!qh.enabled) return false;
+        const now = new Date();
+        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+        if (qh.start <= qh.end) {
+            return currentTime >= qh.start && currentTime <= qh.end;
+        } else {
+            // Over midnight
+            return currentTime >= qh.start || currentTime <= qh.end;
         }
     }
 }

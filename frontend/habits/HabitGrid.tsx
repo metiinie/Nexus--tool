@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Check, Flame, Activity, Plus, Trash2, X, ChevronRight, Target, Calendar } from 'lucide-react';
 import { useStore } from '../../store';
 import { GlassCard } from '../../components/ui/GlassCard';
-import { formatDate } from '../../constants';
+import { formatDate, getHabitStreak } from '../../constants';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const COLOR_OPTIONS = [
@@ -14,7 +14,7 @@ const COLOR_OPTIONS = [
 ];
 
 export const HabitGrid: React.FC = () => {
-  const { habits, addHabit, toggleHabitForDate, deleteHabit } = useStore();
+  const { habits, addHabit, toggleHabit, deleteHabit } = useStore();
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const today = formatDate(new Date());
@@ -45,9 +45,9 @@ export const HabitGrid: React.FC = () => {
         <div>
           <h2 className="text-2xl font-black text-white flex items-center gap-3 uppercase italic tracking-tighter">
             <span className="w-1.5 h-8 bg-gradient-to-b from-fuchsia-400 to-purple-600 rounded-full shadow-[0_0_15px_#d946ef]"></span>
-            Neural Routine Sync
+            Habit Tracker
           </h2>
-          <p className="text-[10px] text-slate-400 font-mono tracking-[0.2em] mt-1 ml-4 uppercase opacity-60">Consistency Protocol Matrix</p>
+          <p className="text-[10px] text-slate-400 font-mono tracking-[0.2em] mt-1 ml-4 uppercase opacity-60">Daily Consistency</p>
         </div>
 
         <button
@@ -60,7 +60,7 @@ export const HabitGrid: React.FC = () => {
           `}
         >
           {isAdding ? <X size={18} /> : <Plus size={18} />}
-          <span>{isAdding ? 'Abort' : 'New Habit'}</span>
+          <span>{isAdding ? 'Cancel' : 'New Habit'}</span>
         </button>
       </div>
 
@@ -75,7 +75,7 @@ export const HabitGrid: React.FC = () => {
               <GlassCard className="p-6 border-fuchsia-500/30 bg-fuchsia-500/5">
                 <div className="flex flex-col md:flex-row gap-6 items-end">
                   <div className="flex-1 w-full space-y-2">
-                    <label className="text-[10px] font-mono text-fuchsia-400 uppercase tracking-widest ml-1">Routine Descriptor</label>
+                    <label className="text-[10px] font-mono text-fuchsia-400 uppercase tracking-widest ml-1">Habit Name</label>
                     <input
                       autoFocus
                       type="text"
@@ -90,7 +90,7 @@ export const HabitGrid: React.FC = () => {
                     type="submit"
                     className="w-full md:w-auto px-10 py-3 bg-fuchsia-600 text-white rounded-xl font-black uppercase tracking-widest hover:bg-fuchsia-500 shadow-lg shadow-fuchsia-500/20 active:scale-95 transition-all"
                   >
-                    Establish
+                    Create
                   </button>
                 </div>
               </GlassCard>
@@ -103,7 +103,7 @@ export const HabitGrid: React.FC = () => {
         {habits.length === 0 ? (
           <GlassCard className="p-16 text-center border-dashed border-white/5 opacity-50 space-y-4">
             <Calendar size={48} className="mx-auto text-slate-700" />
-            <p className="text-slate-500 font-mono text-sm uppercase tracking-widest">No neural routines established</p>
+            <p className="text-slate-500 font-mono text-sm uppercase tracking-widest">No habits created yet</p>
           </GlassCard>
         ) : (
           habits.map((habit, index) => {
@@ -122,7 +122,7 @@ export const HabitGrid: React.FC = () => {
                       <div className="flex items-center gap-3 mt-1.5">
                         <div className="flex items-center gap-1.5 bg-orange-500/10 px-2 py-0.5 rounded-full border border-orange-500/20">
                           <Flame size={12} className="text-orange-500 animate-pulse" />
-                          <span className="text-[10px] text-orange-400 font-black font-mono uppercase italic shrink-0">{habit.streak} Day Continuous</span>
+                          <span className="text-[10px] text-orange-400 font-black font-mono uppercase italic shrink-0">{getHabitStreak(habit.completedDates)} Day Streak</span>
                         </div>
                       </div>
                     </div>
@@ -147,7 +147,7 @@ export const HabitGrid: React.FC = () => {
                           {day.isToday ? 'TOD' : day.dayName}
                         </span>
                         <button
-                          onClick={() => toggleHabitForDate(habit.id, day.dateStr)}
+                          onClick={() => toggleHabit(habit.id, day.dateStr)}
                           className={`
                               w-11 h-11 md:w-12 md:h-12 rounded-2xl flex items-center justify-center transition-all duration-500 relative group/tile shrink-0 snap-center
                               ${isCompleted

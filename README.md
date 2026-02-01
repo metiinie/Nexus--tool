@@ -87,10 +87,9 @@
 
 ```
 OrionTracking/
-├── 📂 server/                      # NestJS Backend
+├── 📂 backend/                     # NestJS Backend
 │   ├── 📂 prisma/
 │   │   ├── schema.prisma          # Database schema
-│   │   └── dev.db                 # SQLite database (dev)
 │   ├── 📂 src/
 │   │   ├── main.ts                # Application entry point
 │   │   ├── app.module.ts          # Root module

@@ -57,14 +57,25 @@ export class TeamsController {
         return this.teamsService.assignTeamTask(teamId, taskId, req.user.id, body.assigneeId);
     }
 
+    // --- COLLABORATION EXTENSIONS ---
+
     @Post(':teamId/tasks/:taskId/comments')
     addComment(
         @Req() req: any,
         @Param('teamId') teamId: string,
         @Param('taskId') taskId: string,
-        @Body() body: { content: string }
+        @Body() body: { content: string, type?: string }
     ) {
-        return this.teamsService.addTeamTaskComment(teamId, taskId, req.user.id, body.content);
+        return this.teamsService.addTeamTaskComment(teamId, taskId, req.user.id, body.content, body.type);
+    }
+
+    @Patch(':teamId/comments/:commentId/resolve')
+    resolveComment(
+        @Req() req: any,
+        @Param('teamId') teamId: string,
+        @Param('commentId') commentId: string
+    ) {
+        return this.teamsService.resolveTaskComment(teamId, commentId, req.user.id);
     }
 
     @Get(':teamId/tasks/:taskId/comments')
@@ -74,5 +85,22 @@ export class TeamsController {
         @Param('taskId') taskId: string
     ) {
         return this.teamsService.getTaskComments(teamId, taskId, req.user.id);
+    }
+
+    @Get(':teamId/chat')
+    getChat(
+        @Req() req: any,
+        @Param('teamId') teamId: string
+    ) {
+        return this.teamsService.getSquadChat(teamId, req.user.id);
+    }
+
+    @Post(':teamId/chat')
+    postMessage(
+        @Req() req: any,
+        @Param('teamId') teamId: string,
+        @Body() body: { content: string }
+    ) {
+        return this.teamsService.postSquadMessage(teamId, req.user.id, body.content);
     }
 }

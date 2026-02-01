@@ -42,14 +42,14 @@ export const NotificationCenter: React.FC = () => {
                             <GlassCard className="overflow-hidden border-white/10 bg-slate-950/90 backdrop-blur-2xl shadow-2xl">
                                 <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
                                     <h3 className="text-xs font-black text-white uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <Zap size={14} className="text-cyan-400" /> Neural Pings
+                                        <Bell size={14} className="text-cyan-400" /> Notifications
                                     </h3>
                                     {unreadCount > 0 && (
                                         <button
                                             onClick={() => markAllNotificationsRead()}
                                             className="text-[9px] font-mono text-slate-500 hover:text-cyan-400 uppercase tracking-widest transition-colors"
                                         >
-                                            Clear Signal
+                                            Mark All Read
                                         </button>
                                     )}
                                 </div>
@@ -58,7 +58,7 @@ export const NotificationCenter: React.FC = () => {
                                     {notifications.length === 0 ? (
                                         <div className="p-10 text-center space-y-3">
                                             <BellOff className="mx-auto text-slate-700" size={32} />
-                                            <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">Signal Silent</p>
+                                            <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">No Notifications</p>
                                         </div>
                                     ) : (
                                         <div className="divide-y divide-white/5">
@@ -91,7 +91,7 @@ export const NotificationCenter: React.FC = () => {
                                 </div>
 
                                 <div className="p-3 bg-slate-900/50 text-center border-t border-white/5">
-                                    <p className="text-[8px] font-mono text-slate-600 uppercase tracking-[0.3em]">Proactive Sync Active</p>
+                                    <p className="text-[8px] font-mono text-slate-600 uppercase tracking-[0.3em]">Stay up to date</p>
                                 </div>
                             </GlassCard>
                         </motion.div>

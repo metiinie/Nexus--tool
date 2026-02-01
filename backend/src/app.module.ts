@@ -13,13 +13,13 @@ import { TeamsController } from './teams.controller';
 import { TeamsService } from './teams.service';
 import { GameService } from './game.service';
 import { PrismaService } from './prisma.service';
-
 import { AchievementService } from './achievement.service';
 import { NotificationService } from './notification.service';
+import { AdminController } from './admin.controller';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule],
-  controllers: [AppController, HealthController, TasksController, HabitsController, UserController, TeamsController],
+  controllers: [AppController, HealthController, TasksController, HabitsController, UserController, TeamsController, AdminController],
   providers: [AppService, TasksService, HabitsService, TeamsService, GameService, PrismaService, AchievementService, NotificationService],
 })
 export class AppModule { }

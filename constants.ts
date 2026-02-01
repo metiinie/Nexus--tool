@@ -1,4 +1,4 @@
-import { Priority } from "./types";
+export type Priority = 'low' | 'medium' | 'high' | 'critical';
 
 export const XP_PER_TASK = 50;
 export const XP_PER_HABIT = 20;
@@ -22,3 +22,25 @@ export const formatDate = (date: Date): string => {
 };
 
 export const generateId = () => Math.random().toString(36).substr(2, 9);
+
+export const getHabitStreak = (completedDates: string[]) => {
+  if (!completedDates.length) return 0;
+  const dates = [...completedDates].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  let streak = 0;
+  const checkDate = new Date();
+  checkDate.setUTCHours(0, 0, 0, 0);
+
+  const todayStr = formatDate(checkDate);
+  checkDate.setDate(checkDate.getDate() - 1);
+  const yesterdayStr = formatDate(checkDate);
+
+  if (!dates.includes(todayStr) && !dates.includes(yesterdayStr)) return 0;
+
+  let current = dates.includes(todayStr) ? new Date(todayStr) : new Date(yesterdayStr);
+
+  while (dates.includes(formatDate(current))) {
+    streak++;
+    current.setDate(current.getDate() - 1);
+  }
+  return streak;
+};
