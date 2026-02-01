@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { TeamsService } from './teams.service';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -45,5 +45,34 @@ export class TeamsController {
     @Get(':teamId/activity')
     getActivity(@Req() req: any, @Param('teamId') teamId: string) {
         return this.teamsService.getTeamActivity(teamId, req.user.id);
+    }
+
+    @Patch(':teamId/tasks/:taskId/assign')
+    assignTask(
+        @Req() req: any,
+        @Param('teamId') teamId: string,
+        @Param('taskId') taskId: string,
+        @Body() body: { assigneeId: string }
+    ) {
+        return this.teamsService.assignTeamTask(teamId, taskId, req.user.id, body.assigneeId);
+    }
+
+    @Post(':teamId/tasks/:taskId/comments')
+    addComment(
+        @Req() req: any,
+        @Param('teamId') teamId: string,
+        @Param('taskId') taskId: string,
+        @Body() body: { content: string }
+    ) {
+        return this.teamsService.addTeamTaskComment(teamId, taskId, req.user.id, body.content);
+    }
+
+    @Get(':teamId/tasks/:taskId/comments')
+    getComments(
+        @Req() req: any,
+        @Param('teamId') teamId: string,
+        @Param('taskId') taskId: string
+    ) {
+        return this.teamsService.getTaskComments(teamId, taskId, req.user.id);
     }
 }

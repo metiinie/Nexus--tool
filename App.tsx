@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Target, BarChart2, Settings, User, LogOut, Users, Activity } from 'lucide-react';
+import { LayoutDashboard, Target, BarChart2, Settings, User, LogOut, Users, Activity, Trophy } from 'lucide-react';
 import { TaskBoard } from './frontend/tasks/TaskBoard';
 import { HabitGrid } from './frontend/habits/HabitGrid';
 import { AnalyticsDashboard } from './frontend/analytics/AnalyticsDashboard';
 import { GamificationBar } from './frontend/gamification/GamificationBar';
 import { TeamsPage } from './frontend/teams/TeamsPage';
+import { SettingsPage } from './frontend/settings/SettingsPage';
+import { TrophyRoom } from './frontend/achievements/TrophyRoom';
 import { AuthPage } from './frontend/auth/AuthPage';
 import { useStore } from './store';
 
@@ -25,13 +27,26 @@ const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = 
   </NavLink>
 );
 
+const MobileNavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => (
+  <NavLink
+    to={to}
+    className={({ isActive }) => `
+      flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all duration-300
+      ${isActive
+        ? 'text-cyan-400 bg-cyan-400/5'
+        : 'text-slate-500 hover:text-slate-300'}
+    `}
+  >
+    <div className="transition-transform duration-300">{icon}</div>
+    <span className="text-[9px] font-black uppercase tracking-tighter">{label}</span>
+  </NavLink>
+);
 const App: React.FC = () => {
-  const { isAuthenticated, syncAll, isInitialSync, logout } = useStore();
+  const { isAuthenticated, syncAll, isInitialSync, logout, visualPrefs } = useStore();
 
   useEffect(() => {
     if (isAuthenticated) {
       syncAll();
-      // Regular heart-beat sync every 30 seconds
       const interval = setInterval(syncAll, 30000);
       return () => clearInterval(interval);
     }
@@ -64,10 +79,30 @@ const App: React.FC = () => {
 
   return (
     <HashRouter>
-      <div className="flex h-screen text-slate-200 font-sans selection:bg-cyan-500/30">
+      <div className={`flex h-screen text-slate-200 font-sans selection:bg-cyan-500/30 overflow-hidden relative ${!visualPrefs.motion ? 'no-animate' : ''}`}>
+
+        {/* Global Visual Overlays */}
+        {visualPrefs.scanlines && (
+          <div className="fixed inset-0 pointer-events-none z-[9999] opacity-[0.03] overflow-hidden">
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]"></div>
+            <div className="absolute top-0 left-0 w-full h-[100px] bg-gradient-to-b from-transparent via-cyan-500/20 to-transparent animate-[scanline_8s_linear_infinite] opacity-20"></div>
+          </div>
+        )}
+
+        {visualPrefs.chromatic && (
+          <div className="fixed inset-0 pointer-events-none z-[9998] mix-blend-screen opacity-[0.02]">
+            <div className="absolute inset-0 bg-red-500 translate-x-[1px]"></div>
+            <div className="absolute inset-0 bg-blue-500 -translate-x-[1px]"></div>
+          </div>
+        )}
+
+        <div
+          className="fixed inset-0 pointer-events-none z-[9997] bg-[radial-gradient(circle_at_50%_50%,transparent,rgba(0,0,0,0.4))]"
+          style={{ opacity: visualPrefs.intensity / 100 }}
+        ></div>
 
         {/* Sidebar */}
-        <aside className="w-64 hidden md:flex flex-col border-r border-white/5 bg-slate-950/50 backdrop-blur-xl p-4">
+        <aside className="w-64 hidden md:flex flex-col border-r border-white/5 bg-slate-950/50 backdrop-blur-xl p-4 relative z-10">
           <div className="mb-10 px-2 mt-2">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded bg-gradient-to-tr from-cyan-400 to-fuchsia-500 flex items-center justify-center text-black font-bold text-lg shadow-lg shadow-cyan-500/20">N</div>
@@ -80,6 +115,7 @@ const App: React.FC = () => {
             <NavItem to="/tasks" icon={<Target size={20} />} label="Operations" />
             <NavItem to="/habits" icon={<Activity size={20} />} label="Neural Patterns" />
             <NavItem to="/analytics" icon={<BarChart2 size={20} />} label="Performance" />
+            <NavItem to="/achievements" icon={<Trophy size={20} />} label="Trophy Room" />
             <NavItem to="/squadron" icon={<Users size={20} />} label="Squadron" />
           </nav>
 
@@ -95,30 +131,33 @@ const App: React.FC = () => {
           </div>
         </aside>
 
-        {/* Mobile Layout Support */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-lg border-t border-white/10 p-4 flex justify-around">
-          <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'text-cyan-400' : 'text-slate-500'}><LayoutDashboard size={20} /></NavLink>
-          <NavLink to="/tasks" className={({ isActive }) => isActive ? 'text-cyan-400' : 'text-slate-500'}><Target size={20} /></NavLink>
-          <NavLink to="/habits" className={({ isActive }) => isActive ? 'text-cyan-400' : 'text-slate-500'}><Activity size={20} /></NavLink>
-          <NavLink to="/squadron" className={({ isActive }) => isActive ? 'text-cyan-400' : 'text-slate-500'}><Users size={20} /></NavLink>
-          <button onClick={handleLogout} className="text-slate-500"><LogOut size={20} /></button>
+        {/* Mobile Navigation */}
+        <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-sm">
+          <div className="bg-slate-900/80 backdrop-blur-2xl border border-white/10 p-2.5 rounded-2xl flex justify-between items-center shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
+            <MobileNavItem to="/dashboard" icon={<LayoutDashboard size={18} />} label="Base" />
+            <MobileNavItem to="/tasks" icon={<Target size={18} />} label="Ops" />
+            <MobileNavItem to="/habits" icon={<Activity size={18} />} label="Sync" />
+            <MobileNavItem to="/analytics" icon={<BarChart2 size={18} />} label="Data" />
+            <MobileNavItem to="/squadron" icon={<Users size={18} />} label="Squad" />
+            <MobileNavItem to="/settings" icon={<Settings size={18} />} label="Config" />
+          </div>
         </div>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-hidden relative flex flex-col">
+        <main className="flex-1 overflow-hidden relative flex flex-col z-10 w-full">
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"></div>
 
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 scroll-smooth custom-scrollbar">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-8 pb-28 md:pb-8 scroll-smooth custom-scrollbar">
             <div className="max-w-7xl mx-auto h-full flex flex-col">
               <GamificationBar />
 
-              <div className="flex-1 mt-8 animate-in fade-in duration-500">
+              <div className="flex-1 mt-6 md:mt-8">
                 <Routes>
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/dashboard" element={
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 h-full">
                       <TaskBoard />
-                      <div className="flex flex-col gap-8">
+                      <div className="flex flex-col gap-6 md:gap-8">
                         <HabitGrid />
                         <AnalyticsDashboard />
                       </div>
@@ -127,7 +166,9 @@ const App: React.FC = () => {
                   <Route path="/tasks" element={<TaskBoard />} />
                   <Route path="/habits" element={<HabitGrid />} />
                   <Route path="/analytics" element={<AnalyticsDashboard />} />
+                  <Route path="/achievements" element={<TrophyRoom />} />
                   <Route path="/squadron" element={<TeamsPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>
               </div>

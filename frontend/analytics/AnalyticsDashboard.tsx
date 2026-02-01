@@ -34,19 +34,19 @@ export const AnalyticsDashboard: React.FC = () => {
         <p className="text-[10px] text-slate-400 font-mono tracking-[0.2em] mt-1 ml-4 uppercase opacity-60">System Throughput & Efficiency Metrics</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard icon={<Zap className="text-cyan-400" />} label="XP Yield" value={user?.xp || 0} sub="Lifetime Gain" />
-        <MetricCard icon={<Target className="text-fuchsia-400" />} label="Op Success" value={tasks.filter(t => t.status === 'done').length} sub="Tasks Closed" />
-        <MetricCard icon={<Activity className="text-emerald-400" />} label="Routine Sync" value={`${habits.length > 0 ? Math.round(habits.reduce((acc, h) => acc + h.streak, 0) / habits.length) : 0}d`} sub="Avg Streak" />
-        <MetricCard icon={<Award className="text-amber-400" />} label="Authority" value={user?.level || 1} sub="Current Rank" />
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <MetricCard icon={<Zap className="text-cyan-400" />} label="XP Yield" value={user?.xp || 0} sub="Lifetime" />
+        <MetricCard icon={<Target className="text-fuchsia-400" />} label="Success" value={tasks.filter(t => t.status === 'done').length} sub="Ops Closed" />
+        <MetricCard icon={<Activity className="text-emerald-400" />} label="Sync" value={`${habits.length > 0 ? Math.round(habits.reduce((acc, h) => acc + h.streak, 0) / habits.length) : 0}d`} sub="Avg Streak" />
+        <MetricCard icon={<Award className="text-amber-400" />} label="Auth" value={user?.level || 1} sub="Rank" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mt-4">
         {/* Task Distribution */}
-        <GlassCard className="p-6 bg-slate-950/40 border-white/5" hoverEffect>
-          <div className="flex items-center justify-between mb-8">
+        <GlassCard className="p-4 md:p-6 bg-slate-950/40 border-white/5" hoverEffect>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-cyan-400 italic">Operational Distribution</h3>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               {taskData.map((d, i) => (
                 <div key={d.name} className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i] }}></div>

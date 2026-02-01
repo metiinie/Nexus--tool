@@ -10,8 +10,27 @@ export class TasksService {
     ) { }
 
     async findAll(userId: string) {
-        return (this.prisma.task as any).findMany({
+        // Return tasks where user is creator, assignee, or part of the team
+        const userTeams = await (this.prisma.teamMember as any).findMany({
             where: { userId },
+            select: { teamId: true }
+        });
+        const teamIds = userTeams.map((ut: any) => ut.teamId);
+
+        return (this.prisma.task as any).findMany({
+            where: {
+                OR: [
+                    { userId },
+                    { assigneeId: userId },
+                    { teamId: { in: teamIds } }
+                ]
+            },
+            include: {
+                assignee: { select: { id: true, name: true, email: true } },
+                user: { select: { id: true, name: true, email: true } },
+                team: { select: { id: true, name: true } },
+                _count: { select: { comments: true } }
+            },
             orderBy: { order: 'asc' },
         });
     }
@@ -20,21 +39,38 @@ export class TasksService {
         return (this.prisma.task as any).create({
             data: {
                 title: data.title,
+                description: data.description || '',
                 priority: data.priority || 'medium',
                 status: data.status || 'todo',
                 dueDate: data.dueDate,
                 userId,
+                teamId: data.teamId || null,
+                assigneeId: data.assigneeId || null,
             },
         });
     }
 
     async update(id: string, userId: string, data: any) {
-        // Get current task state
-        const task = await (this.prisma.task as any).findFirst({
-            where: { id, userId },
+        // Get current task state with team members
+        const task = await (this.prisma.task as any).findUnique({
+            where: { id },
+            include: {
+                team: {
+                    include: { members: true }
+                }
+            }
         });
 
         if (!task) return null;
+
+        // Permission check: creator, assignee, or any team member can update
+        const isCreator = task.userId === userId;
+        const isAssignee = task.assigneeId === userId;
+        const isTeamMember = task.team?.members.some((m: any) => m.userId === userId);
+
+        if (!isCreator && !isAssignee && !isTeamMember) {
+            return null;
+        }
 
         // Check if task is being completed
         const isCompleting = task.status !== 'done' && data.status === 'done';

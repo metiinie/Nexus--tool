@@ -11,31 +11,63 @@ model User {
   id           String        @id @default(uuid())
   email        String        @unique
   name         String?
+  bio          String?       @default("")
+  preferences  String?       @default("{}") // JSON string for UI prefs
   passwordHash String
   xp           Int           @default(0)
   level        Int           @default(1)
   tasks        Task[]
+  assignedTasks Task[]       @relation("TaskAssignee")
   habits       Habit[]
   xpEvents     XpEvent[]
   teamMembers  TeamMember[]
   activities   Activity[]    @relation("ActivityActor")
+  notifications Notification[]
+  taskComments  TaskComment[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
 
-model Task {
-  id        String     @id @default(uuid())
+model Notification {
+  id        String   @id @default(uuid())
   userId    String
-  user      User       @relation(fields: [userId], references: [id])
-  teamId    String?    // Optional: shared tasks belong to a team
-  team      Team?      @relation(fields: [teamId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   // critical_deadline | habit_at_risk | level_up | system_alert
   title     String
-  status    String     @default("todo")
-  priority  String     @default("medium")
-  dueDate   DateTime?
-  order     Int        @default(0)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  message   String
+  priority  String   @default("medium") // low | medium | high | urgent
+  isRead    Boolean  @default(false)
+  metadata  String?  // JSON string
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id          String        @id @default(uuid())
+  userId      String        // Creator
+  user        User          @relation(fields: [userId], references: [id])
+  assigneeId  String?       // Assigned operator
+  assignee    User?         @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  teamId      String?       // Optional: shared tasks belong to a team
+  team        Team?         @relation(fields: [teamId], references: [id])
+  title       String
+  description String?       @default("")
+  status      String        @default("todo")
+  priority    String        @default("medium")
+  dueDate     DateTime?
+  order       Int           @default(0)
+  comments    TaskComment[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model TaskComment {
+  id        String   @id @default(uuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
 }
 
 model Habit {

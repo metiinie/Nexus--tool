@@ -98,12 +98,20 @@ export class GameService {
         this.logger.debug(`Retrieving profile for user: ${userId}`);
         const user = await (this.prisma.user as any).findFirst({
             where: { id: userId },
-            select: { id: true, email: true, name: true, xp: true, level: true, createdAt: true },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                bio: true,
+                preferences: true,
+                xp: true,
+                level: true,
+                createdAt: true
+            },
         });
 
         if (!user) return null;
 
-        // CRITICAL FIX: Ensure name is NEVER empty/null in the response
         const fallbackName = user.email.split('@')[0];
         const displayName = (user.name && user.name.trim() !== '') ? user.name : fallbackName;
 
@@ -114,5 +122,13 @@ export class GameService {
             name: displayName,
             nextLevelXP,
         };
+    }
+
+    async updateProfile(userId: string, data: { name?: string; bio?: string; preferences?: string }) {
+        this.logger.log(`Updating profile for user: ${userId}`);
+        return (this.prisma.user as any).update({
+            where: { id: userId },
+            data,
+        });
     }
 }

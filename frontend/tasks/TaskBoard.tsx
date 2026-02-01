@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Reorder, useDragControls, motion, AnimatePresence } from 'framer-motion';
-import { Plus, GripVertical, Trash2, CheckCircle2, AlertCircle, Clock, MoreVertical, Edit2, X, ChevronRight, Zap, Target, Archive } from 'lucide-react';
+import { Plus, GripVertical, Trash2, CheckCircle2, AlertCircle, Clock, MoreVertical, Edit2, X, ChevronRight, Zap, Target, Archive, User, MessageSquare } from 'lucide-react';
 import { useStore } from '../../store';
 import { Task, Status, Priority } from '../../types';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { STATUS_COLUMNS, PRIORITY_COLORS } from '../../constants';
+import { TaskDetailModal } from './TaskDetailModal';
 
 interface TaskCardProps {
   task: Task;
@@ -16,6 +17,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete }) => {
   const controls = useDragControls();
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
+  const { setActiveTask } = useStore();
 
   const handleUpdateTitle = () => {
     if (editTitle.trim() && editTitle !== task.title) {
@@ -62,10 +64,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete }) => {
               </h4>
             )}
 
-            <div className="flex items-center gap-3 mt-3">
+            <div className="flex items-center flex-wrap gap-2 mt-3">
               <select
                 value={task.priority}
-                onChange={(e) => onUpdate({ priority: e.target.value as Priority })}
+                onChange={(e) => onUpdate({ priority: e.target.value as any })}
                 className={`text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-full border bg-transparent font-black cursor-pointer outline-none transition-all ${PRIORITY_COLORS[task.priority]}`}
               >
                 <option value="low" className="bg-slate-900">Low</option>
@@ -74,7 +76,27 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete }) => {
                 <option value="critical" className="bg-slate-900 font-bold text-fuchsia-400">Critical</option>
               </select>
 
-              <div className="flex items-center gap-1 text-[10px] text-slate-500 font-mono">
+              {task.team && (
+                <div className="flex items-center gap-1 text-[9px] text-cyan-400 bg-cyan-400/10 px-2 py-0.5 rounded-full border border-cyan-400/20 font-black uppercase tracking-tighter">
+                  <span className="opacity-60">{task.team.name}</span>
+                </div>
+              )}
+
+              {task.assignee && (
+                <div className="flex items-center gap-1 text-[9px] text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-400/20 font-black uppercase tracking-tighter">
+                  <User size={10} />
+                  <span>{task.assignee.name || task.assignee.email.split('@')[0]}</span>
+                </div>
+              )}
+
+              {task.commentsCount ? (
+                <div className="flex items-center gap-1 text-[8px] text-slate-500 font-mono uppercase tracking-widest">
+                  <MessageSquare size={10} />
+                  <span>{task.commentsCount}</span>
+                </div>
+              ) : null}
+
+              <div className="flex items-center gap-1 text-[10px] text-slate-500 font-mono ml-auto">
                 <Clock size={10} />
                 <span>{new Date(task.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
               </div>
@@ -82,6 +104,13 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete }) => {
           </div>
 
           <div className="flex flex-col gap-2 items-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => setActiveTask(task)}
+              className="p-1.5 text-slate-500 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all"
+              title="Mission Intelligence"
+            >
+              <Edit2 size={16} />
+            </button>
             {task.status !== 'done' && (
               <button
                 onClick={() => onUpdate({ status: 'done' })}
@@ -110,6 +139,7 @@ export const TaskBoard: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newPriority, setNewPriority] = useState<Priority>('medium');
+  const [activeTab, setActiveTab] = useState<Status>('todo');
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,11 +240,35 @@ export const TaskBoard: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 flex-1 overflow-auto pb-12 pr-2 custom-scrollbar">
+      {/* Mobile Tab Switcher */}
+      <div className="flex md:hidden bg-slate-900/50 border border-white/5 p-1 rounded-xl mb-6 overflow-x-auto no-scrollbar scroll-smooth snap-x">
+        {STATUS_COLUMNS.map((col) => (
+          <button
+            key={col.id}
+            onClick={() => setActiveTab(col.id as Status)}
+            className={`
+              flex-1 flex flex-col items-center py-2 px-1 rounded-lg transition-all min-w-[80px] snap-center
+              ${activeTab === col.id ? 'bg-cyan-500/10 text-cyan-400 shadow-[inset_0_0_15px_rgba(6,182,212,0.1)]' : 'text-slate-500'}
+            `}
+          >
+            <span className="text-[10px] font-black uppercase tracking-tighter tabular-nums">
+              {getTasksByStatus(col.id as Status).length}
+            </span>
+            <span className="text-[8px] font-bold uppercase tracking-widest">{col.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 flex-1 overflow-auto pb-12 pr-1 md:pr-2 custom-scrollbar">
         {STATUS_COLUMNS.map((col) => {
           const colTasks = getTasksByStatus(col.id as Status);
+          const isHiddenOnMobile = activeTab !== col.id;
+
           return (
-            <div key={col.id} className="flex flex-col gap-4 min-w-[280px]">
+            <div
+              key={col.id}
+              className={`flex flex-col gap-4 min-w-0 md:min-w-[280px] ${isHiddenOnMobile ? 'hidden md:flex' : 'flex'}`}
+            >
               <div className="flex items-center justify-between px-3 py-2 bg-slate-900/50 rounded-xl border border-white/5 backdrop-blur-md">
                 <div className="flex items-center gap-2">
                   <span className={`${col.id === 'done' ? 'text-emerald-400' : col.id === 'in-progress' ? 'text-zap-400 text-amber-400' : 'text-slate-400'}`}>
@@ -256,6 +310,7 @@ export const TaskBoard: React.FC = () => {
           );
         })}
       </div>
+      <TaskDetailModal />
     </div>
   );
 };

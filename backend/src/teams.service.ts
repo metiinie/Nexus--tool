@@ -138,7 +138,9 @@ export class TeamsService {
         return (this.prisma.task as any).findMany({
             where: { teamId },
             include: {
-                user: { select: { id: true, email: true } },
+                user: { select: { id: true, email: true, name: true } },
+                assignee: { select: { id: true, email: true, name: true } },
+                _count: { select: { comments: true } },
             },
             orderBy: { createdAt: 'desc' },
         });
@@ -157,10 +159,12 @@ export class TeamsService {
         const task = await (this.prisma.task as any).create({
             data: {
                 title: data.title,
+                description: data.description || '',
                 priority: data.priority || 'medium',
                 status: 'todo',
                 userId,
                 teamId,
+                assigneeId: data.assigneeId || null,
             },
         });
 
@@ -168,6 +172,92 @@ export class TeamsService {
         await this.logActivity(teamId, userId, 'task_created', { title: data.title });
 
         return task;
+    }
+
+    async assignTeamTask(teamId: string, taskId: string, userId: string, assigneeId: string) {
+        // Verify user is a member
+        const membership = await (this.prisma.teamMember as any).findFirst({
+            where: { userId, teamId },
+        });
+
+        if (!membership) {
+            throw new ForbiddenException('Not a member of this team');
+        }
+
+        // Verify task belongs to team
+        const task = await (this.prisma.task as any).findFirst({
+            where: { id: taskId, teamId },
+        });
+
+        if (!task) {
+            throw new NotFoundException('Task not found in this team');
+        }
+
+        // Verify assignee is a member of the team
+        const assigneeMembership = await (this.prisma.teamMember as any).findFirst({
+            where: { userId: assigneeId, teamId },
+        });
+
+        if (!assigneeMembership) {
+            throw new ForbiddenException('Assignee is not a member of this team');
+        }
+
+        const updatedTask = await (this.prisma.task as any).update({
+            where: { id: taskId },
+            data: { assigneeId },
+        });
+
+        await this.logActivity(teamId, userId, 'task_assigned', { taskId, assigneeId, title: task.title });
+
+        return updatedTask;
+    }
+
+    async addTeamTaskComment(teamId: string, taskId: string, userId: string, content: string) {
+        const membership = await (this.prisma.teamMember as any).findFirst({
+            where: { userId, teamId },
+        });
+
+        if (!membership) {
+            throw new ForbiddenException('Not a member of this team');
+        }
+
+        const task = await (this.prisma.task as any).findFirst({
+            where: { id: taskId, teamId },
+        });
+
+        if (!task) {
+            throw new NotFoundException('Task not found in this team');
+        }
+
+        const comment = await (this.prisma as any).taskComment.create({
+            data: {
+                taskId,
+                userId,
+                content,
+            },
+        });
+
+        await this.logActivity(teamId, userId, 'task_comment', { taskId, title: task.title });
+
+        return comment;
+    }
+
+    async getTaskComments(teamId: string, taskId: string, userId: string) {
+        const membership = await (this.prisma as any).teamMember.findFirst({
+            where: { userId, teamId },
+        });
+
+        if (!membership) {
+            throw new ForbiddenException('Not a member of this team');
+        }
+
+        return (this.prisma as any).taskComment.findMany({
+            where: { taskId },
+            include: {
+                user: { select: { id: true, name: true, email: true } },
+            },
+            orderBy: { createdAt: 'asc' },
+        });
     }
 
     async logActivity(teamId: string, actorId: string, type: string, metadata: any) {
