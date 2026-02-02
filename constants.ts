@@ -1,4 +1,4 @@
-export type Priority = 'low' | 'medium' | 'high' | 'critical';
+import { Priority } from './types';
 
 export const XP_PER_TASK = 50;
 export const XP_PER_HABIT = 20;

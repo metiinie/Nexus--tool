@@ -94,47 +94,38 @@ OrionTracking/
 │   │   ├── main.ts                # Application entry point
 │   │   ├── app.module.ts          # Root module
 │   │   ├── prisma.service.ts      # Database service
-│   │   ├── 🔐 auth.controller.ts  # Authentication endpoints
-│   │   ├── 🔐 auth.service.ts     # Auth business logic
-│   │   ├── 🔐 auth.module.ts      # Auth module
-│   │   ├── 🔐 jwt.strategy.ts     # JWT validation strategy
-│   │   ├── 📋 tasks.controller.ts # Task endpoints
-│   │   ├── 📋 tasks.service.ts    # Task business logic
-│   │   ├── 🎯 habits.controller.ts# Habit endpoints
-│   │   ├── 🎯 habits.service.ts   # Habit business logic
-│   │   ├── 🎮 game.service.ts     # XP, leveling, streaks
-│   │   ├── 👥 teams.controller.ts # Team collaboration endpoints
-│   │   ├── 👥 teams.service.ts    # Team business logic
-│   │   ├── 👤 user.controller.ts  # User profile endpoints
-│   │   └── ⚕️ health.controller.ts# Health check
+│   │   ├── auth.controller.ts     # Authentication endpoints
+│   │   ├── auth.service.ts        # Auth business logic
+│   │   ├── auth.module.ts         # Auth module
+│   │   ├── jwt.strategy.ts        # JWT validation strategy
+│   │   ├── tasks.controller.ts    # Task endpoints
+│   │   ├── tasks.service.ts       # Task business logic
+│   │   ├── habits.controller.ts   # Habit endpoints
+│   │   ├── habits.service.ts      # Habit business logic
+│   │   ├── game.service.ts        # XP, leveling, streaks
+│   │   ├── teams.controller.ts    # Team collaboration endpoints
+│   │   ├── teams.service.ts       # Team business logic
+│   │   ├── user.controller.ts     # User profile endpoints
+│   │   └── health.controller.ts   # Health check
 │   └── package.json
 │
-├── 📂 modules/                     # Frontend Feature Modules
-│   ├── 📂 auth/
-│   │   └── AuthPage.tsx           # Login/Register UI
-│   ├── 📂 tasks/
-│   │   └── TaskBoard.tsx          # Kanban-style task board
-│   ├── 📂 habits/
-│   │   └── HabitGrid.tsx          # Habit tracking grid
-│   ├── 📂 analytics/
-│   │   └── AnalyticsDashboard.tsx # Charts and insights
-│   ├── 📂 gamification/
-│   │   └── GamificationBar.tsx    # XP bar and level display
-│   └── 📂 teams/
-│       └── TeamsPage.tsx          # Squadron collaboration hub
+├── 📂 frontend/                    # React Feature Components
+│   ├── 📂 auth/                   # Login/Register UI
+│   ├── 📂 tasks/                  # Task board components
+│   ├── 📂 habits/                 # Habit tracking UI
+│   ├── 📂 analytics/              # Statistics and Charts
+│   ├── 📂 gamification/           # Level and XP bars
+│   └── 📂 teams/                  # Squadron collaboration
 │
-├── 📂 components/
+├── 📂 components/                  # Shared UI components
 │   └── 📂 ui/
-│       └── GlassCard.tsx          # Reusable glassmorphic card
+│       └── GlassCard.tsx          # Reusable glassmorphic container
 │
 ├── 📄 App.tsx                      # Main app component with routing
-├── 📄 store.ts                     # Zustand state management
-├── 📄 authStore.ts                 # Authentication state
-├── 📄 types.ts                     # TypeScript type definitions
-├── 📄 constants.ts                 # App-wide constants
-├── 📄 vite.config.ts               # Vite configuration
-├── 📄 tailwind.config.js           # Tailwind CSS config
-└── 📄 package.json                 # Frontend dependencies
+├── 📄 store.ts                     # Zustand state management (Auth + Data)
+├── 📄 constants.ts                 # App-wide constants & types
+├── 📄 package.json                 # Monorepo dependencies
+└── 📄 vercel.json                  # Deployment configuration
 ```
 
 ---
@@ -266,34 +257,26 @@ Streaks are **derived** from HabitLog entries:
 
 1. **Clone the repository**
 ```bash
+### Installation
+
+1. **Clone and Install**
+```bash
 git clone <repository-url>
 cd OrionTracking
-```
-
-2. **Install frontend dependencies**
-```bash
 npm install
 ```
 
-3. **Install backend dependencies**
-```bash
-cd server
-npm install
+2. **Set up Environment**
+Create `backend/.env`:
+```env
+DATABASE_URL="postgresql://..."
+JWT_SECRET="your-secret"
+RESEND_API_KEY="re_..."
 ```
 
-4. **Set up environment variables**
+3. **Database Setup**
 ```bash
-# server/.env
-DATABASE_URL="file:./dev.db"
-PORT=3000
-JWT_SECRET="your-secret-key-here"
-```
-
-5. **Initialize database**
-```bash
-cd server
-npx prisma migrate dev --name init
-npx prisma generate
+npx prisma generate --schema=backend/prisma/schema.prisma
 ```
 
 ### Running the Application
@@ -302,7 +285,7 @@ npx prisma generate
 
 Terminal 1 (Backend):
 ```bash
-cd server
+cd backend
 npm run start:dev
 ```
 
@@ -313,17 +296,14 @@ npm run dev
 
 Access the app at: **http://localhost:5173**
 
-**Production Build:**
+**Production Build (Manual):**
 
 ```bash
-# Build frontend
+# Full build (Frontend + Prisma)
 npm run build
 
-# Build backend
-cd server
-npm run build
-
-# Start production server
+# Start backend prod
+cd backend
 npm run start:prod
 ```
 

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Target, BarChart2, Settings, User, LogOut, Users, Activity, Trophy, Plus } from 'lucide-react';
+import { LayoutDashboard, Target, BarChart2, Settings, LogOut, Users, Activity, Trophy, Plus } from 'lucide-react';
 import { TaskBoard } from './frontend/tasks/TaskBoard';
 import { HabitGrid } from './frontend/habits/HabitGrid';
 import { AnalyticsDashboard } from './frontend/analytics/AnalyticsDashboard';

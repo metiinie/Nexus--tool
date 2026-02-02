@@ -1,25 +1,10 @@
 /// <reference types="vite/client" />
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { Task, TaskComment, Habit, Achievement, Notification, UserProfile } from './types';
 
 // Use current origin if in production, otherwise use localhost:3000
 export const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api');
-
-export interface UserProfile {
-  id: string;
-  email: string;
-  name: string;
-  bio?: string;
-  preferences?: string; // Stringified JSON
-  xp: number;
-  level: number;
-  nextLevelXP: number;
-  isVerified?: boolean;
-  twoFactorEnabled?: boolean;
-  role?: 'admin' | 'operator';
-  notificationPrefs?: string; // JSON
-  quietHours?: string; // JSON
-}
 
 export interface VisualPreferences {
   motion: boolean;
@@ -39,67 +24,11 @@ const DEFAULT_PREFS: VisualPreferences = {
   lowPower: false
 };
 
-export interface Task {
-  id: string;
-  title: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  status: 'todo' | 'in-progress' | 'done' | 'backlog';
-  dueDate?: string;
-  description?: string;
-  createdAt: string;
-  assignee?: { id: string, name: string, email: string };
-  user?: { id: string, name: string, email: string };
-  team?: { id: string, name: string };
-  commentsCount?: number;
-  comments?: any[]; // For block indicators
-}
-
-export interface TaskComment {
-  id: string;
-  content: string;
-  type: 'standard' | 'update' | 'question' | 'block';
-  resolved: boolean;
-  createdAt: string;
-  user: { id: string, name: string, email: string };
-  resolvedBy?: { id: string, name: string };
-}
-
 export interface SquadChatMessage {
   id: string;
   content: string;
   createdAt: string;
   user: { id: string, name: string, level: number };
-}
-
-export interface Habit {
-  id: string;
-  title: string;
-  completedDates: string[];
-}
-
-export interface Achievement {
-  id: string;
-  key: string;
-  title: string;
-  description: string;
-  icon: string;
-  category: string;
-  isUnlocked: boolean;
-  progress: number;
-  target: number;
-  unlockedAt?: string;
-  unlockedReason?: string;
-  version: number;
-}
-
-export interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  isRead: boolean;
-  createdAt: string;
 }
 
 interface AppState {

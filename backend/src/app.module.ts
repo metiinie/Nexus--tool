@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { HealthController } from './health.controller';
 import { AuthModule } from './auth.module';
 import { TasksController } from './tasks.controller';
@@ -19,7 +17,7 @@ import { AdminController } from './admin.controller';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule],
-  controllers: [AppController, HealthController, TasksController, HabitsController, UserController, TeamsController, AdminController],
-  providers: [AppService, TasksService, HabitsService, TeamsService, GameService, PrismaService, AchievementService, NotificationService],
+  controllers: [HealthController, TasksController, HabitsController, UserController, TeamsController, AdminController],
+  providers: [TasksService, HabitsService, TeamsService, GameService, PrismaService, AchievementService, NotificationService],
 })
 export class AppModule { }
