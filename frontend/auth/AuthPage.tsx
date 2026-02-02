@@ -49,22 +49,27 @@ export const AuthPage: React.FC = () => {
             return;
         }
 
-        const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+        const endpoint = isLogin ? '/auth/login' : '/auth/register';
         const payload = isLogin ? { email, password } : { email, password, name };
 
         try {
-            // endpoint starts with /api/auth/...
-            // API_BASE is .../api
-            // We need to be careful with double /api
-            const cleanBase = API_BASE.replace(/\/api$/, '');
-            const response = await fetch(`${cleanBase}${endpoint}`, {
+            const response = await fetch(`${API_BASE}${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify(payload),
             });
 
-            const data = await response.json();
+            // Safely parse JSON or handle error
+            let data;
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                data = await response.json();
+            } else {
+                // If not JSON, it might be a 404 HTML page or other text error
+                const text = await response.text();
+                throw new Error(response.ok ? 'Unexpected response format' : `Server Error: ${response.status}. Please check if your backend is running and the API URL is correct.`);
+            }
 
             if (!response.ok) {
                 throw new Error(data.message || 'Authentication failed');
