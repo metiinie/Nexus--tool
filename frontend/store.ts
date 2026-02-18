@@ -47,10 +47,12 @@ interface AppState {
   achievements: Achievement[];
   notifications: Notification[];
   activeTask: Task | null;
+  backendStatus: { status: string; database: string } | null;
 
   // Core Actions
   setAuth: (user: UserProfile) => void;
   setOnline: (online: boolean) => void;
+  checkStatus: () => Promise<void>;
   logout: () => Promise<void>;
   syncAll: () => Promise<void>;
   setActiveTask: (task: Task | null) => void;
@@ -107,6 +109,7 @@ export const useStore = create<AppState>()(
       achievements: [],
       notifications: [],
       activeTask: null,
+      backendStatus: null,
 
       setAuth: (user) => {
         console.log('[Store] Auth established for:', user.email);
@@ -202,6 +205,20 @@ export const useStore = create<AppState>()(
           set({ isOnline: false });
         } finally {
           set({ isSyncing: false, isInitialSync: false });
+        }
+      },
+
+      checkStatus: async () => {
+        try {
+          const res = await fetch(`${API_BASE}/status`);
+          if (res.ok) {
+            const data = await res.json();
+            set({ backendStatus: data });
+          } else {
+            set({ backendStatus: { status: 'offline', database: 'unknown' } });
+          }
+        } catch (e) {
+          set({ backendStatus: { status: 'offline', database: 'unknown' } });
         }
       },
 

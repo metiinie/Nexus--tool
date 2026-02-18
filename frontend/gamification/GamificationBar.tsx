@@ -1,6 +1,6 @@
 import React from 'react';
-import { useStore } from '../../store';
-import { GlassCard } from '../../components/ui/GlassCard';
+import { useStore } from '../store';
+import { GlassCard } from '../components/ui/GlassCard';
 import { Zap, Target, TrendingUp, Trophy, ShieldCheck } from 'lucide-react';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 

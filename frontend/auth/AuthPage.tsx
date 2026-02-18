@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useStore, API_BASE } from '../../store';
-import { GlassCard } from '../../components/ui/GlassCard';
+import { useStore, API_BASE } from '../store';
+import { GlassCard } from '../components/ui/GlassCard';
 import { User, Mail, Lock, Shield, Zap, Terminal, ChevronRight, Activity, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

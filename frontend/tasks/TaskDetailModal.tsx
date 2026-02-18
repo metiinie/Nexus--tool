@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useStore, TaskComment } from '../../store';
-import { GlassCard } from '../../components/ui/GlassCard';
+import { useStore, TaskComment } from '../store';
+import { GlassCard } from '../components/ui/GlassCard';
 import { X, Send, Clock, MessageSquare, Shield, User, CheckCircle, AlertCircle, HelpCircle, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

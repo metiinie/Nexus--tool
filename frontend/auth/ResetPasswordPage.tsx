@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useStore } from '../../store';
-import { GlassCard } from '../../components/ui/GlassCard';
+import { useStore } from '../store';
+import { GlassCard } from '../components/ui/GlassCard';
 import { Lock, Shield, Zap, ChevronRight, Activity, Loader2, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 

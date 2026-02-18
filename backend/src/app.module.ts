@@ -15,9 +15,11 @@ import { AchievementService } from './achievement.service';
 import { NotificationService } from './notification.service';
 import { AdminController } from './admin.controller';
 
+import { StatusController } from './status.controller';
+
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule],
-  controllers: [HealthController, TasksController, HabitsController, UserController, TeamsController, AdminController],
+  controllers: [HealthController, TasksController, HabitsController, UserController, TeamsController, AdminController, StatusController],
   providers: [TasksService, HabitsService, TeamsService, GameService, PrismaService, AchievementService, NotificationService],
 })
 export class AppModule { }

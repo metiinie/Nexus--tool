@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useStore, SquadChatMessage } from '../../store';
-import { GlassCard } from '../../components/ui/GlassCard';
+import { useStore, SquadChatMessage } from '../store';
+import { GlassCard } from '../components/ui/GlassCard';
 import { Send, Terminal, Loader2, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

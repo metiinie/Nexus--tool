@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useStore, Notification } from '../../store';
-import { GlassCard } from '../../components/ui/GlassCard';
+import { useStore, Notification } from '../store';
+import { GlassCard } from '../components/ui/GlassCard';
 import { Bell, BellOff, CheckCircle2, AlertTriangle, Info, Zap, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

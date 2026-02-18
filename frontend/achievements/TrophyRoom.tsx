@@ -1,6 +1,6 @@
 import React from 'react';
-import { useStore } from '../../store';
-import { GlassCard } from '../../components/ui/GlassCard';
+import { useStore } from '../store';
+import { GlassCard } from '../components/ui/GlassCard';
 import { Trophy, Zap, Target, ShieldAlert, Activity, Cpu, Clock, Lock, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 

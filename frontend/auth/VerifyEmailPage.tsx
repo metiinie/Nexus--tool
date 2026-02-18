@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useStore } from '../../store';
-import { GlassCard } from '../../components/ui/GlassCard';
+import { useStore } from '../store';
+import { GlassCard } from '../components/ui/GlassCard';
 import { Shield, CheckCircle, XCircle, Activity, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 

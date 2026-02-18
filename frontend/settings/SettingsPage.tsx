@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useStore, API_BASE } from '../../store';
-import { GlassCard } from '../../components/ui/GlassCard';
+import { useStore, API_BASE } from '../store';
+import { GlassCard } from '../components/ui/GlassCard';
 import { User, Shield, Monitor, Save, Lock, Smartphone, Palette, Eye, EyeOff, Terminal, Settings2, Bell, Moon, Mail, Brain, History, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 

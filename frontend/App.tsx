@@ -1,16 +1,16 @@
 import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { LayoutDashboard, Target, BarChart2, Settings, LogOut, Users, Activity, Trophy, Plus } from 'lucide-react';
-import { TaskBoard } from './frontend/tasks/TaskBoard';
-import { HabitGrid } from './frontend/habits/HabitGrid';
-import { AnalyticsDashboard } from './frontend/analytics/AnalyticsDashboard';
-import { GamificationBar } from './frontend/gamification/GamificationBar';
-import { TeamsPage } from './frontend/teams/TeamsPage';
-import { SettingsPage } from './frontend/settings/SettingsPage';
-import { TrophyRoom } from './frontend/achievements/TrophyRoom';
-import { AuthPage } from './frontend/auth/AuthPage';
-import { VerifyEmailPage } from './frontend/auth/VerifyEmailPage';
-import { ResetPasswordPage } from './frontend/auth/ResetPasswordPage';
+import { TaskBoard } from './tasks/TaskBoard';
+import { HabitGrid } from './habits/HabitGrid';
+import { AnalyticsDashboard } from './analytics/AnalyticsDashboard';
+import { GamificationBar } from './gamification/GamificationBar';
+import { TeamsPage } from './teams/TeamsPage';
+import { SettingsPage } from './settings/SettingsPage';
+import { TrophyRoom } from './achievements/TrophyRoom';
+import { AuthPage } from './auth/AuthPage';
+import { VerifyEmailPage } from './auth/VerifyEmailPage';
+import { ResetPasswordPage } from './auth/ResetPasswordPage';
 import { useStore } from './store';
 
 const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => (
@@ -48,7 +48,7 @@ const MobileNavItem: React.FC<{ to: string; icon: React.ReactNode; label: string
 );
 
 const App: React.FC = () => {
-  const { isAuthenticated, syncAll, isInitialSync, logout, visualPrefs, setOnline } = useStore();
+  const { isAuthenticated, syncAll, isInitialSync, logout, visualPrefs, setOnline, checkStatus, backendStatus } = useStore();
   const [showQuickAction, setShowQuickAction] = React.useState(false);
 
   useEffect(() => {
@@ -66,7 +66,10 @@ const App: React.FC = () => {
 
       const interval = setInterval(() => {
         if (navigator.onLine) syncAll();
+        checkStatus();
       }, 60000); // 1 min sync
+
+      checkStatus();
 
       return () => {
         window.removeEventListener('online', handleOnline);
@@ -74,7 +77,7 @@ const App: React.FC = () => {
         clearInterval(interval);
       };
     }
-  }, [isAuthenticated, syncAll, setOnline]);
+  }, [isAuthenticated, syncAll, setOnline, checkStatus]);
 
   const handleLogout = async () => {
     await logout();
@@ -131,6 +134,14 @@ const App: React.FC = () => {
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded bg-gradient-to-tr from-cyan-400 to-fuchsia-500 flex items-center justify-center text-black font-bold text-lg shadow-lg shadow-cyan-500/20">N</div>
               <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">NEXUS</span>
+            </div>
+
+            {/* Neural Link Status */}
+            <div className="mt-3 flex items-center gap-2 px-2">
+              <div className={`w-1.5 h-1.5 rounded-full ${backendStatus?.status === 'online' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse'}`}></div>
+              <span className="text-[10px] font-mono font-bold tracking-[0.1em] text-slate-500 uppercase">
+                Neural Link: {backendStatus?.status === 'online' ? 'Stable' : 'Unstable'}
+              </span>
             </div>
           </div>
 

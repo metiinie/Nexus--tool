@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Check, Flame, Activity, Plus, Trash2, X, ChevronRight, Target, Calendar } from 'lucide-react';
-import { useStore } from '../../store';
-import { GlassCard } from '../../components/ui/GlassCard';
-import { formatDate, getHabitStreak } from '../../constants';
+import { useStore } from '../store';
+import { GlassCard } from '../components/ui/GlassCard';
+import { formatDate, getHabitStreak } from '../constants';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const COLOR_OPTIONS = [

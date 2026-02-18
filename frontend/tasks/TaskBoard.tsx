@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Reorder, useDragControls, motion, AnimatePresence } from 'framer-motion';
 import { Plus, GripVertical, Trash2, CheckCircle2, AlertCircle, Clock, MoreVertical, Edit2, X, ChevronRight, Zap, Target, Archive, User, MessageSquare, AlertTriangle, Shield } from 'lucide-react';
-import { useStore } from '../../store';
-import { Task, Status, Priority } from '../../types';
-import { GlassCard } from '../../components/ui/GlassCard';
-import { STATUS_COLUMNS, PRIORITY_COLORS } from '../../constants';
+import { useStore } from '../store';
+import { Task, Status, Priority } from '../types';
+import { GlassCard } from '../components/ui/GlassCard';
+import { STATUS_COLUMNS, PRIORITY_COLORS } from '../constants';
 import { TaskDetailModal } from './TaskDetailModal';
 
 interface TaskCardProps {

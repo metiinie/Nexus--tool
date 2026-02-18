@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { useStore } from '../../store';
-import { GlassCard } from '../../components/ui/GlassCard';
+import { useStore } from '../store';
+import { GlassCard } from '../components/ui/GlassCard';
 import { TrendingUp, Award, Zap, Activity, Target } from 'lucide-react';
-import { getHabitStreak } from '../../constants';
+import { getHabitStreak } from '../constants';
 
 export const AnalyticsDashboard: React.FC = () => {
   const { tasks, habits, user } = useStore();
