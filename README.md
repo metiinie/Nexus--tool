@@ -1,82 +1,122 @@
 # NEXUS - Neural Productivity Suite
 
-> **A futuristic, holographic-themed productivity suite with real-time collaboration, gamification, and enterprise-grade security.**
+> **A futuristic productivity suite with real-time collaboration, gamification, and enterprise-grade security.**
 
 ![Status](https://img.shields.io/badge/status-active-success)
-![Neural Link](https://img.shields.io/badge/neural--link-stable-cyan)
-![Deployment](https://img.shields.io/badge/deployment-vercel-black)
+![Backend](https://img.shields.io/badge/backend-NestJS-red)
+![Frontend](https://img.shields.io/badge/frontend-React%20%2B%20Vite-blue)
+![Database](https://img.shields.io/badge/database-Neon%20PostgreSQL-green)
 
 ---
 
-## 🏗️ Monorepo Structure
+## 🏗️ Project Structure
 
 ```text
 OrionTracking/
- ├── frontend/           # Vite + React (UI & Features)
- ├── backend/            # NestJS + Prisma (Secure API)
- ├── api/                # Vercel Serverless entry
- ├── package.json        # Root Workspace configuration
- └── README.md           # This guide
+ ├── backend/        # NestJS + Prisma API (deploy to Render)
+ ├── frontend/       # React + Vite UI (deploy to Vercel)
+ └── README.md
 ```
 
 ---
 
-## 🚀 Neural Quickstart
+## 🚀 Local Development
 
-### 1. Initialization
+### Backend (NestJS)
 ```bash
-# Install everything
-npm install
-npm run install:all
-
-# Setup Database
 cd backend
+npm install
+# Copy and fill in your environment variables
+cp .env.example .env
+# Push schema to Neon database
 npx prisma db push
+# Start dev server
+npm run start:dev
 ```
+Backend runs at: `http://localhost:3000`
 
-### 2. Launching Systems
-You can run both systems simultaneously from the root:
+### Frontend (React + Vite)
 ```bash
+cd frontend
+npm install
 npm run dev
 ```
-
-Or manually:
-- **Core API**: `cd backend && npm run start:dev`
-- **Neural UI**: `cd frontend && npm run dev`
+Frontend runs at: `http://localhost:5173`
 
 ---
 
 ## 🌍 Deployment
 
-The project is optimized for deployment on **Vercel**.
+### Backend → Render
+| Setting | Value |
+|---|---|
+| **Root Directory** | `backend` |
+| **Build Command** | `npm run build` |
+| **Start Command** | `npm run start:prod` |
+| **Environment Variables** | `DATABASE_URL`, `JWT_SECRET`, `RESEND_API_KEY`, `FRONTEND_URL`, `NODE_ENV=production` |
 
-1.  **Database**: Setup a PostgreSQL database (e.g., Neon).
-2.  **Guide**: Follow the detailed [Deployment Guide](./DEPLOYMENT.md) for step-by-step instructions.
-3.  **CI/CD**: Automatic deployments are configured via GitHub integration.
+### Frontend → Vercel
+| Setting | Value |
+|---|---|
+| **Root Directory** | `frontend` |
+| **Framework Preset** | `Vite` |
+| **Build Command** | `npm run build` |
+| **Output Directory** | `dist` |
+| **Environment Variables** | `VITE_API_URL` = your Render backend URL |
 
 ---
 
-## 📊 Database Management
+## 🗄️ Database (Neon)
 
-To view and edit your data visually, use the built-in Neural Terminal:
-```bash
-npm run studio
+1. Create a project on [Neon](https://neon.tech)
+2. Copy the **Connection String** from the dashboard
+3. Set it as `DATABASE_URL` in `backend/.env`
+4. Run migrations:
+   ```bash
+   cd backend
+   npx prisma db push
+   ```
+5. (Optional) View data visually:
+   ```bash
+   npx prisma studio
+   ```
+
+---
+
+## 📦 Environment Variables
+
+### `backend/.env`
+```env
+DATABASE_URL="postgresql://user:password@host/nexus?sslmode=require"
+JWT_SECRET="your-long-random-secret"
+RESEND_API_KEY="re_xxxxxxxxxxxxxxxx"
+FRONTEND_URL="http://localhost:5173"
+PORT=3000
+NODE_ENV="development"
 ```
-*This launches Prisma Studio at http://localhost:5555*
+
+### `frontend/.env` (create this file)
+```env
+VITE_API_URL="http://localhost:3000"
+```
 
 ---
 
-## ✨ Features & Architecture
+## ✨ Features
 
 ### Core Productivity
-- ✅ **Task Management**: Advanced Kanban with real-time sync.
-- 🔄 **Habit Tracking**: Streak-based consistency logging.
-- 👥 **Squadron Hub**: Real-time team collaboration.
+- ✅ **Task Management** — Kanban board with drag & priority sorting
+- 🔄 **Habit Tracking** — Streak-based daily consistency logs
+- 👥 **Squadron Hub** — Real-time team collaboration & squad chat
+
+### Gamification
+- 🏆 **XP & Levels** — Earn XP for completing tasks and habits
+- 🎖️ **Achievements** — Unlock badges for milestones
 
 ### Security
-- 🔒 **Quantum Auth**: JWT + HttpOnly Cookies.
-- 🛡️ **Authoritative DB**: Prisma + PostgreSQL/SQLite.
-- ⚡ **Neural Link**: Real-time backend status monitoring.
+- 🔒 **JWT Auth** — Secure access & refresh tokens via HttpOnly cookies
+- 🛡️ **2FA Support** — TOTP-based two-factor authentication
+- 📧 **Email Verification** — Powered by Resend
 
 ---
 
