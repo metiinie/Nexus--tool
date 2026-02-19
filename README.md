@@ -2,8 +2,9 @@
 
 > **A futuristic, holographic-themed productivity suite with real-time collaboration, gamification, and enterprise-grade security.**
 
-![Status](https://img.shields.io/badge/status-production--ready-success)
+![Status](https://img.shields.io/badge/status-active-success)
 ![Neural Link](https://img.shields.io/badge/neural--link-stable-cyan)
+![Deployment](https://img.shields.io/badge/deployment-vercel-black)
 
 ---
 
@@ -42,6 +43,16 @@ npm run dev
 Or manually:
 - **Core API**: `cd backend && npm run start:dev`
 - **Neural UI**: `cd frontend && npm run dev`
+
+---
+
+## 🌍 Deployment
+
+The project is optimized for deployment on **Vercel**.
+
+1.  **Database**: Setup a PostgreSQL database (e.g., Neon).
+2.  **Guide**: Follow the detailed [Deployment Guide](./DEPLOYMENT.md) for step-by-step instructions.
+3.  **CI/CD**: Automatic deployments are configured via GitHub integration.
 
 ---
 
